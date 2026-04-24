@@ -1,0 +1,188 @@
+name: Build App Packages
+on:
+  push:
+    branches:
+      - dev # <-- update this branch with your own
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  windows-installer:
+    runs-on: windows-latest
+    outputs:
+      app_version: ${{ steps.envs.outputs.APP_VERSION }}
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Get Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Build Windows App
+        run: |
+          flutter config --enable-windows-desktop
+          flutter build windows --release
+
+      - name: Build iss script
+        run: dart run inno_bundle:build --no-app --release --no-installer
+
+      - name: Output config into github output
+        id: envs
+        # thanks to https://github.com/actions/runner/issues/2224#issuecomment-1289925992
+        run: echo $(dart run inno_bundle:build --envs --no-hf) | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Build installer
+        uses: Minionguyjpro/Inno-Setup-Action@v1.2.2
+        with:
+          path: ./build/windows/x64/installer/Release/inno-script.iss
+
+      - name: Rename Windows Installer
+        run: |
+          $version = "${{ steps.envs.outputs.APP_VERSION }}"
+          $appVersion = $version.Split('+')[0]
+          Get-ChildItem -Path "./build/windows/x64/installer/Release/*-Installer.exe" | Rename-Item -NewName "PostLens-$appVersion-win-x64.exe"
+
+      - name: Upload Windows installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: ./build/windows/x64/installer/Release/PostLens-*-win-x64.exe
+
+  macos-package:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Get Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Build macOS App
+        run: |
+          flutter config --enable-macos-desktop
+          flutter build macos --release
+
+      - name: Create macOS DMG
+        run: |
+          APP_VERSION="$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d '+' -f 1)"
+          ARCH="$(uname -m)"
+          mkdir -p build/macos/archive
+          rm -rf build/macos/archive/dmg-src
+          mkdir -p build/macos/archive/dmg-src
+          cp -R build/macos/Build/Products/Release/PostLens.app build/macos/archive/dmg-src/
+          ln -s /Applications build/macos/archive/dmg-src/Applications
+          hdiutil create -volname "PostLens" -srcfolder build/macos/archive/dmg-src -ov -format UDZO "build/macos/archive/PostLens-${APP_VERSION}-mac-${ARCH}.dmg"
+
+      - name: Upload macOS DMG
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-dmg
+          path: build/macos/archive/PostLens-*.dmg
+
+  linux-package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Install Linux build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang cmake ninja-build pkg-config libgtk-3-dev liblzma-dev
+
+      - name: Get Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Build Linux App
+        run: |
+          flutter config --enable-linux-desktop
+          flutter build linux --release
+
+      - name: Build Linux DEB package
+        run: |
+          mkdir -p build/linux/archive
+          APP_VERSION="$(grep '^version:' pubspec.yaml | awk '{print $2}' | cut -d '+' -f 1)"
+          DEB_VERSION="${APP_VERSION/+/-}"
+          ARCH="$(uname -m)"
+          PACKAGE_ROOT="build/linux/deb/request-man"
+          INSTALL_ROOT="$PACKAGE_ROOT/opt/post_lens"
+
+          rm -rf "$PACKAGE_ROOT"
+          mkdir -p "$PACKAGE_ROOT/DEBIAN"
+          mkdir -p "$INSTALL_ROOT"
+          mkdir -p "$PACKAGE_ROOT/usr/bin"
+          mkdir -p "$PACKAGE_ROOT/usr/share/applications"
+          mkdir -p "$PACKAGE_ROOT/usr/share/icons/hicolor/512x512/apps"
+
+          cp -R build/linux/x64/release/bundle/* "$INSTALL_ROOT/"
+          ln -s /opt/post_lens/post_lens "$PACKAGE_ROOT/usr/bin/post_lens"
+          cp web/icons/Icon-512.png "$PACKAGE_ROOT/usr/share/icons/hicolor/512x512/apps/post_lens.png"
+
+          cat > "$PACKAGE_ROOT/usr/share/applications/post_lens.desktop" <<'EOF'
+          [Desktop Entry]
+          Name=PostLens
+          Comment=A PostLens-like API client built with Flutter
+          Exec=post_lens
+          Icon=post_lens
+          Terminal=false
+          Type=Application
+          Categories=Development;Network;
+          StartupNotify=true
+          EOF
+
+          cat > "$PACKAGE_ROOT/DEBIAN/control" <<EOF
+          Package: request-man
+          Version: $DEB_VERSION
+          Section: utils
+          Priority: optional
+          Architecture: amd64
+          Maintainer: David
+          Description: A PostLens-like API client built with Flutter.
+          EOF
+
+          dpkg-deb --build --root-owner-group "$PACKAGE_ROOT" "build/linux/archive/PostLens-${APP_VERSION}-linux-${ARCH}.deb"
+
+      - name: Upload Linux DEB
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-deb
+          path: build/linux/archive/PostLens-*.deb
+
+  release-packages:
+    runs-on: ubuntu-latest
+    needs:
+      - windows-installer
+      - macos-package
+      - linux-package
+    steps:
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+
+      - name: Set Release Version
+        id: release_version
+        run: |
+          VERSION="${{ needs.windows-installer.outputs.app_version }}"
+          echo "APP_VERSION=${VERSION%+*}" >> $GITHUB_ENV
+
+      - name: Release packages
+        uses: softprops/action-gh-release@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          files: |
+            release-assets/windows-installer/*.exe
+            release-assets/macos-dmg/*.dmg
+            release-assets/linux-deb/*.deb
+          name: "v${{ env.APP_VERSION }}"
+          target_commitish: "${{ github.sha }}"
+          tag_name: "v${{ env.APP_VERSION }}"

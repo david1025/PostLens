@@ -1,0 +1,101 @@
+name: post_lens
+description: A PostLens-like API client built with Flutter.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # State management
+  flutter_riverpod: ^2.4.9
+  # Network
+  dio: ^5.4.0
+  # Local Storage
+  sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.0
+  path_provider: ^2.1.1
+  path: ^1.8.3
+  # Protocols
+  web_socket_channel: ^2.4.0
+  socket_io_client: ^3.0.2
+  mqtt_client: ^10.0.0
+  grpc: ^3.2.3
+  file_picker: ^8.0.0
+  # Routing
+  go_router: ^12.1.1
+  # UI & Styling
+  font_awesome_flutter: ^10.7.0
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  multi_split_view: ^3.1.2
+  window_manager: ^0.4.3
+  shared_preferences: ^2.5.5
+  flutter_highlight: ^0.7.0
+  highlight: ^0.7.0
+  csv: ^8.0.0
+  basic_utils: ^5.7.0
+  pointycastle: ^3.7.4
+  asn1lib: ^1.4.0
+  desktop_drop: ^0.4.4
+  dotted_border: ^3.1.0
+  crypto: ^3.0.7
+  uuid: ^4.5.3
+  qr_flutter: ^4.1.0
+  zxing2: ^0.2.4
+  image: ^4.2.0
+  encrypt: ^5.0.3
+  dart_sm: ^0.1.5
+  url_launcher: ^6.2.1
+  sqlite3_flutter_libs: ^0.6.0+eol
+  isolate_manager: ^4.1.5+1
+  collection: ^1.17.1
+  rust_lib_post_lens:
+    path: rust_builder
+  flutter_rust_bridge: 2.12.0
+  toastification: ^3.2.0
+  flutter_js: ^0.8.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.7
+  inno_bundle: ^0.11.2
+  msix: ^3.16.12
+  integration_test:
+    sdk: flutter
+
+inno_bundle:
+  id: "d956e0b0-3a20-11f1-b366-c7db2cab24f7"
+  publisher: "David"
+  languages:
+    - english
+
+msix_config:
+  display_name: PostLens
+  publisher_display_name: David
+  identity_name: com.example.postlens
+  logo_path: .\web\icons\Icon-512.png
+  capabilities: internetClient
+  install_certificate: false
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/icons/
+    - assets/images/
+    - assets/certs/
+  fonts:
+    - family: IBMPlexMono
+      fonts:
+        - asset: assets/fonts/IBMPlexMono/IBMPlexMono-Regular.ttf
+        - asset: assets/fonts/IBMPlexMono/IBMPlexMono-Italic.ttf
+          style: italic
+        - asset: assets/fonts/IBMPlexMono/IBMPlexMono-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/IBMPlexMono/IBMPlexMono-BoldItalic.ttf
+          weight: 700
+          style: italic
