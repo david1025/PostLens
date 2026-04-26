@@ -214,7 +214,7 @@ class _TimestampToolState extends ConsumerState<TimestampTool> {
               ),
               const SizedBox(width: 8),
               PopupMenuButton<String>(
-                tooltip: 'Unit',
+                tooltip: t['unit'] ?? 'Unit',
                 position: PopupMenuPosition.under,
                 padding: EdgeInsets.zero,
                 color: Theme.of(context).colorScheme.surface,
@@ -305,7 +305,7 @@ class _TimestampToolState extends ConsumerState<TimestampTool> {
               ),
               const SizedBox(width: 8),
               PopupMenuButton<String>(
-                tooltip: 'Timezone',
+                tooltip: t['timezone'] ?? 'Timezone',
                 position: PopupMenuPosition.under,
                 padding: EdgeInsets.zero,
                 color: Theme.of(context).colorScheme.surface,
@@ -398,7 +398,7 @@ class _TimestampToolState extends ConsumerState<TimestampTool> {
               ),
               const SizedBox(width: 8),
               PopupMenuButton<String>(
-                tooltip: 'Timezone',
+                tooltip: t['timezone'] ?? 'Timezone',
                 position: PopupMenuPosition.under,
                 padding: EdgeInsets.zero,
                 color: Theme.of(context).colorScheme.surface,
@@ -486,7 +486,7 @@ class _TimestampToolState extends ConsumerState<TimestampTool> {
               ),
               const SizedBox(width: 8),
               PopupMenuButton<String>(
-                tooltip: 'Unit',
+                tooltip: t['unit'] ?? 'Unit',
                 position: PopupMenuPosition.under,
                 padding: EdgeInsets.zero,
                 color: Theme.of(context).colorScheme.surface,
@@ -655,7 +655,7 @@ class _UuidToolState extends ConsumerState<UuidTool> {
         ],
       ),
       rightPane: ToolTextField(
-          label: 'Generated UUIDs',
+          label: t['generated_uuids'] ?? 'Generated UUIDs',
           controller: _rightController,
           readOnly: true),
       centerControls: const SizedBox(),
@@ -678,32 +678,34 @@ class _RegexToolState extends ConsumerState<RegexTool> {
   void _testRegex() {
     setState(() {
       try {
+        final t = ref.read(translationsProvider);
         final pattern = _patternController.text;
         final text = _leftController.text;
         if (pattern.isEmpty) {
-          _rightController.text = 'Please enter a pattern';
+          _rightController.text = t['please_enter_pattern'] ?? 'Please enter a pattern';
           return;
         }
         final regex = RegExp(pattern, multiLine: true);
         final matches = regex.allMatches(text);
         if (matches.isEmpty) {
-          _rightController.text = 'No matches found.';
+          _rightController.text = t['no_matches_found'] ?? 'No matches found.';
         } else {
           final buffer = StringBuffer();
-          buffer.writeln('Found ${matches.length} matches:\n');
+          buffer.writeln('${t['found_matches'] ?? 'Found matches:\n'} ${matches.length}:\n');
           for (int i = 0; i < matches.length; i++) {
             final m = matches.elementAt(i);
             buffer
-                .writeln('Match ${i + 1} [${m.start}-${m.end}]: ${m.group(0)}');
+                .writeln('${t['match'] ?? 'Match'} ${i + 1} [${m.start}-${m.end}]: ${m.group(0)}');
             for (int g = 1; g <= m.groupCount; g++) {
-              buffer.writeln('  Group $g: ${m.group(g)}');
+              buffer.writeln('  ${t['group'] ?? 'Group'} $g: ${m.group(g)}');
             }
             buffer.writeln();
           }
           _rightController.text = buffer.toString();
         }
       } catch (e) {
-        _rightController.text = 'Regex Error: $e';
+        final t = ref.read(translationsProvider);
+        _rightController.text = '${t['regex_error'] ?? 'Regex Error: '}$e';
       }
     });
   }
@@ -757,16 +759,16 @@ class _RegexToolState extends ConsumerState<RegexTool> {
           child: DualPaneToolWidget(
             title: t['regex_testing'] ?? 'Regex Testing',
             leftPane:
-                ToolTextField(label: 'Test Text', controller: _leftController),
+                ToolTextField(label: t['test_text'] ?? 'Test Text', controller: _leftController),
             rightPane: ToolTextField(
-                label: 'Matches', controller: _rightController, readOnly: true),
+                label: t['matches'] ?? 'Matches', controller: _rightController, readOnly: true),
             centerControls: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 ToolButton(
                     onPressed: _testRegex,
                     icon: Icons.arrow_downward,
-                    label: 'Test Match'),
+                    label: t['test_match'] ?? 'Test Match'),
               ],
             ),
           ),
@@ -825,7 +827,8 @@ class _QrCodeToolState extends ConsumerState<QrCodeTool> {
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showInfo(context, 'Failed to recognize QR code: $e');
+        final t = ref.read(translationsProvider);
+        ToastUtils.showInfo(context, '${t['failed_to_recognize_qr'] ?? 'Failed to recognize QR code: '}$e');
       }
     }
   }
@@ -833,6 +836,7 @@ class _QrCodeToolState extends ConsumerState<QrCodeTool> {
   Future<void> _exportQr() async {
     if (_qrData.isEmpty) return;
     try {
+      final t = ref.read(translationsProvider);
       final painter = QrPainter(
         data: _qrData,
         version: QrVersions.auto,
@@ -846,7 +850,7 @@ class _QrCodeToolState extends ConsumerState<QrCodeTool> {
       if (byteData != null) {
         final buffer = byteData.buffer.asUint8List();
         String? outputFile = await FilePicker.platform.saveFile(
-          dialogTitle: 'Save QR Code',
+          dialogTitle: t['save_qr_code'] ?? 'Save QR Code',
           fileName: 'qrcode.png',
           type: FileType.image,
         );
@@ -856,13 +860,14 @@ class _QrCodeToolState extends ConsumerState<QrCodeTool> {
           }
           await File(outputFile).writeAsBytes(buffer);
           if (mounted) {
-            ToastUtils.showInfo(context, 'QR Code exported successfully!');
+            ToastUtils.showInfo(context, t['qr_code_exported_successfully'] ?? 'QR Code exported successfully!');
           }
         }
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showInfo(context, 'Failed to export QR code: $e');
+        final t = ref.read(translationsProvider);
+        ToastUtils.showInfo(context, '${t['failed_to_export_qr'] ?? 'Failed to export QR code: '}$e');
       }
     }
   }
@@ -873,9 +878,9 @@ class _QrCodeToolState extends ConsumerState<QrCodeTool> {
     return DualPaneToolWidget(
       title: t['text_to_qrcode'] ?? 'Text <-> QR Code',
       leftPane: ToolTextField(
-          label: 'Text / URL',
+          label: t['text_url'] ?? 'Text / URL',
           controller: _leftController,
-          hintText: 'Enter text to generate QR code'),
+          hintText: t['enter_text_to_generate_qr'] ?? 'Enter text to generate QR code'),
       rightPane: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -922,12 +927,12 @@ class _QrCodeToolState extends ConsumerState<QrCodeTool> {
           ToolButton(
               onPressed: _generate,
               icon: Icons.arrow_downward,
-              label: 'Generate QR'),
+              label: t['generate_qr'] ?? 'Generate QR'),
           const SizedBox(width: 16),
           ToolButton(
               onPressed: _recognizeQr,
               icon: Icons.arrow_upward,
-              label: 'Recognize QR'),
+              label: t['recognize_qr'] ?? 'Recognize QR'),
         ],
       ),
     );

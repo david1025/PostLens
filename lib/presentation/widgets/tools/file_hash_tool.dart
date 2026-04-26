@@ -22,10 +22,11 @@ class _FileHashToolState extends ConsumerState<FileHashTool> {
     try {
       final result = await FilePicker.platform.pickFiles();
       if (result != null && result.files.single.path != null) {
+        final t = ref.read(translationsProvider);
         setState(() {
           _filePath = result.files.single.path!;
           _isCalculating = true;
-          _md5Result = 'Calculating...';
+          _md5Result = t['calculating'] ?? 'Calculating...';
         });
 
         // Use Isolate or compute if file is large, but for simplicity we'll just read stream
@@ -39,9 +40,10 @@ class _FileHashToolState extends ConsumerState<FileHashTool> {
         });
       }
     } catch (e) {
+      final t = ref.read(translationsProvider);
       setState(() {
         _isCalculating = false;
-        _md5Result = 'Error: $e';
+        _md5Result = '${t['error'] ?? 'Error: '}$e';
       });
     }
   }

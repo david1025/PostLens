@@ -1983,14 +1983,16 @@ class _RequestPaneState extends ConsumerState<RequestPane>
                       setState(() {
                         _selectedScriptSubTab = 'Pre-req';
                       });
-                      this.setState(() {}); // trigger rebuild to update outer scope
+                      this.setState(
+                          () {}); // trigger rebuild to update outer scope
                     }),
                     const SizedBox(height: 2),
                     _buildScriptSidebarItem('Post-res', !isPreReq, () {
                       setState(() {
                         _selectedScriptSubTab = 'Post-res';
                       });
-                      this.setState(() {}); // trigger rebuild to update outer scope
+                      this.setState(
+                          () {}); // trigger rebuild to update outer scope
                     }),
                   ],
                 ),
@@ -2063,8 +2065,8 @@ class _RequestPaneState extends ConsumerState<RequestPane>
                                       },
                                     );
                                   },
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 8),
+                                  padding:
+                                      const EdgeInsets.symmetric(horizontal: 8),
                                   constraints: const BoxConstraints(
                                       minWidth: 32, minHeight: 32),
                                   tooltip: 'Snippets',
@@ -2113,7 +2115,8 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     );
   }
 
-  Widget _buildScriptSidebarItem(String title, bool isSelected, VoidCallback onTap) {
+  Widget _buildScriptSidebarItem(
+      String title, bool isSelected, VoidCallback onTap) {
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(4),
@@ -2121,14 +2124,18 @@ class _RequestPaneState extends ConsumerState<RequestPane>
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 6.0, horizontal: 8.0),
         decoration: BoxDecoration(
-          color: isSelected ? Theme.of(context).colorScheme.surfaceContainerHighest : Colors.transparent,
+          color: isSelected
+              ? Theme.of(context).colorScheme.surfaceContainerHighest
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(4),
         ),
         child: Text(
           title,
           style: TextStyle(
             fontSize: 12,
-            color: isSelected ? Theme.of(context).colorScheme.onSurface : Colors.grey,
+            color: isSelected
+                ? Theme.of(context).colorScheme.onSurface
+                : Colors.grey,
             fontWeight: FontWeight.normal,
           ),
         ),
@@ -2738,7 +2745,8 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     );
   }
 
-  HttpRequestModel? _findRequestInCollections(List<CollectionModel> collections, String reqId) {
+  HttpRequestModel? _findRequestInCollections(
+      List<CollectionModel> collections, String reqId) {
     HttpRequestModel? findInNodes(List<CollectionNode> nodes) {
       for (final node in nodes) {
         if (node is CollectionRequest && node.id == reqId) {
@@ -2769,7 +2777,8 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     final activeEnvironmentId = ref.read(activeEnvironmentIdProvider);
     if (activeEnvironmentId != null) {
       final environments = ref.read(activeWorkspaceEnvironmentsProvider);
-      final envList = environments.where((e) => e.id == activeEnvironmentId).toList();
+      final envList =
+          environments.where((e) => e.id == activeEnvironmentId).toList();
       if (envList.isNotEmpty) {
         currentEnv = envList.first;
         for (var v in currentEnv.variables) {
@@ -2793,7 +2802,6 @@ class _RequestPaneState extends ConsumerState<RequestPane>
 
     Future<Map<String, dynamic>> plSendRequestHandler(
         Map<String, dynamic> options) async {
-      
       HttpRequestModel? targetReq;
       if (options.containsKey('collectionRequestId')) {
         final reqId = options['collectionRequestId'].toString();
@@ -2805,21 +2813,25 @@ class _RequestPaneState extends ConsumerState<RequestPane>
       if (url.trim().isEmpty) {
         throw Exception('url is required');
       }
-      final method = (options['method'] ?? targetReq?.method ?? 'GET').toString().toUpperCase();
-      
+      final method = (options['method'] ?? targetReq?.method ?? 'GET')
+          .toString()
+          .toUpperCase();
+
       final headers = <Map<String, String>>[];
-      
+
       // If we have a target request, initialize headers from it
       if (targetReq != null) {
-        headers.addAll(targetReq.headers.map((e) => Map<String, String>.from(e)));
+        headers
+            .addAll(targetReq.headers.map((e) => Map<String, String>.from(e)));
       }
 
       final rawHeaders = options['headers'];
       if (rawHeaders is Map) {
         rawHeaders.forEach((k, v) {
-          final existingIdx = headers.indexWhere((h) => h['key']?.toLowerCase() == k.toString().toLowerCase());
+          final existingIdx = headers.indexWhere(
+              (h) => h['key']?.toLowerCase() == k.toString().toLowerCase());
           if (existingIdx >= 0) {
-             headers[existingIdx] = {
+            headers[existingIdx] = {
               'key': k.toString(),
               'value': v.toString(),
               'enabled': 'true',
@@ -2864,7 +2876,8 @@ class _RequestPaneState extends ConsumerState<RequestPane>
 
     // 1. Execute Pre-request Script
     if (request.preRequestScript.trim().isNotEmpty) {
-      final preReqResult = await JsEngineService.instance.executePreRequestScript(
+      final preReqResult =
+          await JsEngineService.instance.executePreRequestScript(
         request.preRequestScript,
         request,
         currentEnvMap,
@@ -2873,17 +2886,21 @@ class _RequestPaneState extends ConsumerState<RequestPane>
         plSendRequestHandler,
       );
       if (preReqResult['error'] != null) {
-        ToastUtils.showError(context, 'Pre-request script error: ${preReqResult['error']}');
+        ToastUtils.showError(
+            context, 'Pre-request script error: ${preReqResult['error']}');
       } else {
         request = preReqResult['request'] as HttpRequestModel;
         currentEnvMap = preReqResult['environment'] as Map<String, dynamic>;
-        globalsMap = preReqResult['globals'] as Map<String, dynamic>? ?? globalsMap;
-        collectionVarsMap = preReqResult['collectionVariables'] as Map<String, dynamic>? ??
-            collectionVarsMap;
+        globalsMap =
+            preReqResult['globals'] as Map<String, dynamic>? ?? globalsMap;
+        collectionVarsMap =
+            preReqResult['collectionVariables'] as Map<String, dynamic>? ??
+                collectionVarsMap;
         _updateEnvironmentVariables(currentEnv, currentEnvMap);
         _updateGlobalVariables(globalsMap);
         if (collectionId != null) {
-          await CollectionVariablesService.instance.save(collectionId, collectionVarsMap);
+          await CollectionVariablesService.instance
+              .save(collectionId, collectionVarsMap);
         }
       }
     }
@@ -2936,21 +2953,25 @@ class _RequestPaneState extends ConsumerState<RequestPane>
         plSendRequestHandler,
       );
       if (testsResult['error'] != null) {
-        ToastUtils.showError(context, 'Tests script error: ${testsResult['error']}');
+        ToastUtils.showError(
+            context, 'Tests script error: ${testsResult['error']}');
       } else {
         currentEnvMap = testsResult['environment'] as Map<String, dynamic>;
-        globalsMap = testsResult['globals'] as Map<String, dynamic>? ?? globalsMap;
-        collectionVarsMap = testsResult['collectionVariables'] as Map<String, dynamic>? ??
-            collectionVarsMap;
+        globalsMap =
+            testsResult['globals'] as Map<String, dynamic>? ?? globalsMap;
+        collectionVarsMap =
+            testsResult['collectionVariables'] as Map<String, dynamic>? ??
+                collectionVarsMap;
         _updateEnvironmentVariables(currentEnv, currentEnvMap);
         _updateGlobalVariables(globalsMap);
         if (collectionId != null) {
-          await CollectionVariablesService.instance.save(collectionId, collectionVarsMap);
+          await CollectionVariablesService.instance
+              .save(collectionId, collectionVarsMap);
         }
-        
+
         final testResults = testsResult['testResults'] as List<dynamic>? ?? [];
         if (testResults.isNotEmpty) {
-           finalResponse = finalResponse.copyWith(testResults: testResults);
+          finalResponse = finalResponse.copyWith(testResults: testResults);
         }
       }
     }
@@ -2984,11 +3005,12 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     ref.read(globalVariablesProvider.notifier).setVariables(updated);
   }
 
-  void _updateEnvironmentVariables(EnvironmentModel? currentEnv, Map<String, dynamic> newMap) {
+  void _updateEnvironmentVariables(
+      EnvironmentModel? currentEnv, Map<String, dynamic> newMap) {
     if (currentEnv == null) return;
     final newVars = <EnvironmentVariable>[];
     final mapCopy = Map<String, dynamic>.from(newMap);
-    
+
     for (var v in currentEnv.variables) {
       if (!v.enabled || !mapCopy.containsKey(v.key)) {
         newVars.add(v);
@@ -2997,23 +3019,28 @@ class _RequestPaneState extends ConsumerState<RequestPane>
         mapCopy.remove(v.key);
       }
     }
-    
+
     mapCopy.forEach((k, val) {
-      newVars.add(EnvironmentVariable(key: k, value: val.toString(), enabled: true));
+      newVars.add(
+          EnvironmentVariable(key: k, value: val.toString(), enabled: true));
     });
-    
-    ref.read(environmentsProvider.notifier).updateEnvironment(currentEnv.copyWith(variables: newVars));
+
+    ref
+        .read(environmentsProvider.notifier)
+        .updateEnvironment(currentEnv.copyWith(variables: newVars));
   }
 
   Widget _buildSettingsTab(HttpRequestModel request) {
+    final t = ref.watch(translationsProvider);
     return Padding(
       padding: const EdgeInsets.all(16.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildSettingDropdown(
-            'HTTP version',
-            'Select the HTTP version to use for sending the request.',
+            t['http_version_label'] ?? 'HTTP version',
+            t['http_version_desc'] ??
+                'Select the HTTP version to use for sending the request.',
             request.settings['httpVersion'] ?? 'Auto',
             ['Auto', 'HTTP/1.1', 'HTTP/2', 'HTTP/3'],
             (val) => ref
@@ -3021,80 +3048,92 @@ class _RequestPaneState extends ConsumerState<RequestPane>
                 .updateSettings('httpVersion', val),
           ),
           _buildSettingSwitch(
-            'Enable SSL certificate verification',
-            'Verify SSL certificates when sending a request. Verification failures will result in the request being aborted.',
+            t['enable_ssl_verification'] ??
+                'Enable SSL certificate verification',
+            t['enable_ssl_verification_desc'] ??
+                'Verify SSL certificates when sending a request. Verification failures will result in the request being aborted.',
             request.settings['enableSslVerification'] ?? false,
             (val) => ref
                 .read(requestProvider.notifier)
                 .updateSettings('enableSslVerification', val),
           ),
           _buildSettingSwitch(
-            'Automatically follow redirects',
-            'Follow HTTP 3xx responses as redirects.',
+            t['follow_redirects'] ?? 'Automatically follow redirects',
+            t['follow_redirects_desc'] ??
+                'Follow HTTP 3xx responses as redirects.',
             request.settings['followRedirects'] ?? true,
             (val) => ref
                 .read(requestProvider.notifier)
                 .updateSettings('followRedirects', val),
           ),
           _buildSettingSwitch(
-            'Follow original HTTP Method',
-            'Redirect with the original HTTP method instead of the default behavior of redirecting with GET.',
+            t['follow_original_http_method'] ?? 'Follow original HTTP Method',
+            t['follow_original_http_method_desc'] ??
+                'Redirect with the original HTTP method instead of the default behavior of redirecting with GET.',
             request.settings['followOriginalHttpMethod'] ?? false,
             (val) => ref
                 .read(requestProvider.notifier)
                 .updateSettings('followOriginalHttpMethod', val),
           ),
           _buildSettingSwitch(
-            'Follow Authorization header',
-            'Retain authorization header when a redirect happens to a different hostname.',
+            t['follow_authorization_header'] ?? 'Follow Authorization header',
+            t['follow_authorization_header_desc'] ??
+                'Retain authorization header when a redirect happens to a different hostname.',
             request.settings['followAuthorizationHeader'] ?? false,
             (val) => ref
                 .read(requestProvider.notifier)
                 .updateSettings('followAuthorizationHeader', val),
           ),
           _buildSettingSwitch(
-            'Remove referer header on redirect',
-            'Remove the referer header when a redirect happens.',
+            t['remove_referer_header'] ?? 'Remove referer header on redirect',
+            t['remove_referer_header_desc'] ??
+                'Remove the referer header when a redirect happens.',
             request.settings['removeRefererHeader'] ?? false,
             (val) => ref
                 .read(requestProvider.notifier)
                 .updateSettings('removeRefererHeader', val),
           ),
           _buildSettingSwitch(
-            'Enable strict HTTP parser',
-            'Restrict responses with invalid HTTP headers.',
+            t['enable_strict_http_parser'] ?? 'Enable strict HTTP parser',
+            t['enable_strict_http_parser_desc'] ??
+                'Restrict responses with invalid HTTP headers.',
             request.settings['enableStrictHttpParser'] ?? false,
             (val) => ref
                 .read(requestProvider.notifier)
                 .updateSettings('enableStrictHttpParser', val),
           ),
           _buildSettingSwitch(
-            'Encode URL automatically',
-            'Encode the URL\'s path, query parameters, and authentication fields.',
+            t['encode_url_automatically'] ?? 'Encode URL automatically',
+            t['encode_url_automatically_desc'] ??
+                'Encode the URL\'s path, query parameters, and authentication fields.',
             request.settings['encodeUrlAutomatically'] ?? true,
             (val) => ref
                 .read(requestProvider.notifier)
                 .updateSettings('encodeUrlAutomatically', val),
           ),
           _buildSettingSwitch(
-            'Disable cookie jar',
-            'Prevent cookies used in this request from being stored in the cookie jar. Existing cookies in the cookie jar will not be added as headers for this request.',
+            t['disable_cookie_jar'] ?? 'Disable cookie jar',
+            t['disable_cookie_jar_desc'] ??
+                'Prevent cookies used in this request from being stored in the cookie jar. Existing cookies in the cookie jar will not be added as headers for this request.',
             request.settings['disableCookieJar'] ?? false,
             (val) => ref
                 .read(requestProvider.notifier)
                 .updateSettings('disableCookieJar', val),
           ),
           _buildSettingSwitch(
-            'Use server cipher suite during handshake',
-            'Use the server\'s cipher suite order instead of the client\'s during handshake.',
+            t['use_server_cipher_suite'] ??
+                'Use server cipher suite during handshake',
+            t['use_server_cipher_suite_desc'] ??
+                'Use the server\'s cipher suite order instead of the client\'s during handshake.',
             request.settings['useServerCipherSuite'] ?? false,
             (val) => ref
                 .read(requestProvider.notifier)
                 .updateSettings('useServerCipherSuite', val),
           ),
           _buildSettingTextField(
-            'Maximum number of redirects',
-            'Set a cap on the maximum number of redirects to follow.',
+            t['max_redirects'] ?? 'Maximum number of redirects',
+            t['max_redirects_desc'] ??
+                'Set a cap on the maximum number of redirects to follow.',
             request.settings['maxRedirects']?.toString() ?? '10',
             (val) => ref
                 .read(requestProvider.notifier)
@@ -3102,8 +3141,10 @@ class _RequestPaneState extends ConsumerState<RequestPane>
             isNumber: true,
           ),
           _buildSettingTextField(
-            'TLS/SSL protocols disabled during handshake',
-            'Specify the SSL and TLS protocol versions to be disabled during handshake. All other protocols will be enabled.',
+            t['disabled_protocols'] ??
+                'TLS/SSL protocols disabled during handshake',
+            t['disabled_protocols_desc'] ??
+                'Specify the SSL and TLS protocol versions to be disabled during handshake. All other protocols will be enabled.',
             request.settings['disabledProtocols'] ?? '',
             (val) => ref
                 .read(requestProvider.notifier)
@@ -3111,14 +3152,15 @@ class _RequestPaneState extends ConsumerState<RequestPane>
             maxLines: 3,
           ),
           _buildSettingTextField(
-            'Cipher suite selection',
-            'Order of cipher suites that the SSL server profile uses to establish a secure connection.',
+            t['cipher_suite_selection'] ?? 'Cipher suite selection',
+            t['cipher_suite_selection_desc'] ??
+                'Order of cipher suites that the SSL server profile uses to establish a secure connection.',
             request.settings['cipherSuiteSelection'] ?? '',
             (val) => ref
                 .read(requestProvider.notifier)
                 .updateSettings('cipherSuiteSelection', val),
             maxLines: 3,
-            hint: 'Enter cipher suites',
+            hint: t['enter_cipher_suites'] ?? 'Enter cipher suites',
           ),
         ],
       ),

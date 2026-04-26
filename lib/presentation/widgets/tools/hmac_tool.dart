@@ -89,20 +89,20 @@ class _HmacToolState extends ConsumerState<HmacTool> {
         ),
         Expanded(
           child: DualPaneToolWidget(
-            title: 'HMAC',
+            title: t['hmac'] ?? 'HMAC',
             leftPane: ToolTextField(
-                label: 'Text (UTF-8)',
+                label: t['text_utf8'] ?? 'Text (UTF-8)',
                 controller: _leftController,
-                hintText: 'Enter text to sign...'),
+                hintText: t['enter_text_to_sign'] ?? 'Enter text to sign...'),
             rightPane: ToolTextField(
-                label: 'HMAC Hex',
+                label: t['hmac_hex'] ?? 'HMAC Hex',
                 controller: _rightController,
                 readOnly: true),
             centerControls: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 PopupMenuButton<String>(
-                  tooltip: 'Algorithm',
+                  tooltip: t['algorithm'] ?? 'Algorithm',
                   position: PopupMenuPosition.under,
                   padding: EdgeInsets.zero,
                   color: Theme.of(context).colorScheme.surface,
@@ -167,7 +167,7 @@ class _HmacToolState extends ConsumerState<HmacTool> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                ToolButton(onPressed: _compute, icon: Icons.arrow_downward, label: 'Compute HMAC'),
+                ToolButton(onPressed: _compute, icon: Icons.arrow_downward, label: t['compute_hmac'] ?? 'Compute HMAC'),
               ],
             ),
           ),

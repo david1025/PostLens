@@ -39,7 +39,8 @@ class _AesToolState extends ConsumerState<AesTool> {
         final encrypted = encrypter.encrypt(_leftController.text, iv: iv);
         _rightController.text = encrypted.base64;
       } catch (e) {
-        _rightController.text = 'Error: $e';
+        final t = ref.read(translationsProvider);
+        _rightController.text = '${t['error'] ?? 'Error: '}$e';
       }
     });
   }
@@ -53,7 +54,8 @@ class _AesToolState extends ConsumerState<AesTool> {
             encrypter.decrypt64(_rightController.text.trim(), iv: iv);
         _leftController.text = decrypted;
       } catch (e) {
-        _leftController.text = 'Error: $e';
+        final t = ref.read(translationsProvider);
+        _leftController.text = '${t['error'] ?? 'Error: '}$e';
       }
     });
   }
@@ -81,7 +83,7 @@ class _AesToolState extends ConsumerState<AesTool> {
                       color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'AES Key (auto padded to 32 chars)',
+                      hintText: t['aes_key_hint'] ?? 'AES Key (auto padded to 32 chars)',
                       hintStyle:
                           const TextStyle(color: Colors.grey, fontSize: 12),
                       border: OutlineInputBorder(
@@ -115,7 +117,7 @@ class _AesToolState extends ConsumerState<AesTool> {
                       color: Theme.of(context).textTheme.bodyMedium?.color,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'IV (auto padded to 16 chars)',
+                      hintText: t['iv_hint'] ?? 'IV (auto padded to 16 chars)',
                       hintStyle:
                           const TextStyle(color: Colors.grey, fontSize: 12),
                       border: OutlineInputBorder(
@@ -139,21 +141,21 @@ class _AesToolState extends ConsumerState<AesTool> {
         ),
         Expanded(
           child: DualPaneToolWidget(
-            title: 'AES (CBC/PKCS7)',
+            title: t['aes_cbc_pkcs7'] ?? 'AES (CBC/PKCS7)',
             leftPane: ToolTextField(
-                label: 'Plaintext',
+                label: t['plaintext'] ?? 'Plaintext',
                 controller: _leftController,
-                hintText: 'Text to encrypt'),
+                hintText: t['text_to_encrypt'] ?? 'Text to encrypt'),
             rightPane: ToolTextField(
-                label: 'Ciphertext (Base64)',
+                label: t['ciphertext_base64'] ?? 'Ciphertext (Base64)',
                 controller: _rightController,
-                hintText: 'Base64 ciphertext'),
+                hintText: t['base64_ciphertext'] ?? 'Base64 ciphertext'),
             centerControls: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ToolButton(onPressed: _encrypt, icon: Icons.arrow_downward, label: 'Encrypt'),
+                ToolButton(onPressed: _encrypt, icon: Icons.arrow_downward, label: t['encrypt'] ?? 'Encrypt'),
                 const SizedBox(width: 16),
-                ToolButton(onPressed: _decrypt, icon: Icons.arrow_upward, label: 'Decrypt'),
+                ToolButton(onPressed: _decrypt, icon: Icons.arrow_upward, label: t['decrypt'] ?? 'Decrypt'),
               ],
             ),
           ),

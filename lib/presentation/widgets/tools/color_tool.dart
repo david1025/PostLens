@@ -143,7 +143,7 @@ class _ColorToolState extends ConsumerState<ColorTool> {
                 label: t['input_color_support'] ?? 'Input color (supports HEX / RGB / HSL / CMYK)',
                 controller: _inputController,
                 hintText:
-                    '#FF0000 / rgb(255,0,0) / hsl(0,100%,50%) / cmyk(0%,100%,100%,0%)',
+                    t['input_color_hint'] ?? '#FF0000 / rgb(255,0,0) / hsl(0,100%,50%) / cmyk(0%,100%,100%,0%)',
                 errorText: _inputError,
               ),
               const SizedBox(height: 12),

@@ -38,15 +38,17 @@ class _ImageToolState extends ConsumerState<ImageTool> {
         _imageBytes = null;
         _image = null;
       });
-      ToastUtils.showInfo(context, 'Invalid Image Base64: $e');
+      final t = ref.read(translationsProvider);
+      ToastUtils.showInfo(context, '${t['invalid_image_base64'] ?? 'Invalid Image Base64: '}$e');
     }
   }
 
   Future<void> _exportImage() async {
     if (_imageBytes == null) return;
+    final t = ref.read(translationsProvider);
     try {
       String? outputFile = await FilePicker.platform.saveFile(
-        dialogTitle: 'Save Image',
+        dialogTitle: t['save_image'] ?? 'Save Image',
         fileName: 'image.png',
         type: FileType.image,
       );
@@ -58,17 +60,18 @@ class _ImageToolState extends ConsumerState<ImageTool> {
         }
         await File(outputFile).writeAsBytes(_imageBytes!);
         if (mounted) {
-          ToastUtils.showInfo(context, 'Image exported successfully!');
+          ToastUtils.showInfo(context, t['image_exported_successfully'] ?? 'Image exported successfully!');
         }
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showInfo(context, 'Failed to export image: $e');
+        ToastUtils.showInfo(context, '${t['failed_to_export_image'] ?? 'Failed to export image: '}$e');
       }
     }
   }
 
   Future<void> _selectImage() async {
+    final t = ref.read(translationsProvider);
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.image,
@@ -89,7 +92,7 @@ class _ImageToolState extends ConsumerState<ImageTool> {
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showInfo(context, 'Failed to select image: $e');
+        ToastUtils.showInfo(context, '${t['failed_to_select_image'] ?? 'Failed to select image: '}$e');
       }
     }
   }
@@ -106,7 +109,7 @@ class _ImageToolState extends ConsumerState<ImageTool> {
     return DualPaneToolWidget(
       title: t['image_base64'] ?? 'Image <-> Base64',
       leftPane: ToolTextField(
-          label: 'Image Base64',
+          label: t['image_base64_label'] ?? 'Image Base64',
           controller: _leftController,
           hintText: 'data:image/png;base64,iVBORw0KG...'),
       rightPane: Column(
@@ -145,9 +148,9 @@ class _ImageToolState extends ConsumerState<ImageTool> {
       centerControls: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ToolButton(onPressed: _render, icon: Icons.arrow_downward, label: 'Render Image'),
+          ToolButton(onPressed: _render, icon: Icons.arrow_downward, label: t['render_image'] ?? 'Render Image'),
           const SizedBox(width: 16),
-          ToolButton(onPressed: _selectImage, icon: Icons.image, label: 'Select Image'),
+          ToolButton(onPressed: _selectImage, icon: Icons.image, label: t['select_image'] ?? 'Select Image'),
         ],
       ),
     );

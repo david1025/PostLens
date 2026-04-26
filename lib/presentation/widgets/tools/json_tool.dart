@@ -28,7 +28,8 @@ class _JsonToolState extends ConsumerState<JsonTool> {
         final pretty = const JsonEncoder.withIndent('  ').convert(parsed);
         _rightController.text = pretty;
       } catch (e) {
-        _rightController.text = 'Invalid JSON: $e';
+        final t = ref.read(translationsProvider);
+        _rightController.text = '${t['invalid_json'] ?? 'Invalid JSON: '}$e';
       }
     });
   }
@@ -45,7 +46,8 @@ class _JsonToolState extends ConsumerState<JsonTool> {
         final minified = json.encode(parsed);
         _rightController.text = minified;
       } catch (e) {
-        _rightController.text = 'Invalid JSON: $e';
+        final t = ref.read(translationsProvider);
+        _rightController.text = '${t['invalid_json'] ?? 'Invalid JSON: '}$e';
       }
     });
   }
@@ -63,15 +65,15 @@ class _JsonToolState extends ConsumerState<JsonTool> {
     return DualPaneToolWidget(
       title: t['json_format_minify'] ?? 'JSON Format/Minify',
       leftPane: ToolTextField(
-          label: 'Raw JSON', controller: _leftController, hintText: '{"a":1}'),
+          label: t['raw_json'] ?? 'Raw JSON', controller: _leftController, hintText: '{"a":1}'),
       rightPane:
-          ToolTextField(label: 'Formatted JSON', controller: _rightController),
+          ToolTextField(label: t['formatted_json'] ?? 'Formatted JSON', controller: _rightController),
       centerControls: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ToolButton(onPressed: _format, icon: Icons.format_indent_increase, label: 'Format'),
+          ToolButton(onPressed: _format, icon: Icons.format_indent_increase, label: t['format'] ?? 'Format'),
           const SizedBox(width: 16),
-          ToolButton(onPressed: _minify, icon: Icons.compress, label: 'Minify'),
+          ToolButton(onPressed: _minify, icon: Icons.compress, label: t['minify'] ?? 'Minify'),
         ],
       ),
     );

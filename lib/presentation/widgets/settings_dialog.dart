@@ -48,12 +48,36 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
 
   List<Map<String, dynamic>> _getTabs(Map<String, String> t) {
     return [
-      {'title': t['general'] ?? 'General', 'icon': FontAwesomeIcons.gear, 'key': 'General'},
-      {'title': t['themes'] ?? 'Themes', 'icon': FontAwesomeIcons.palette, 'key': 'Themes'},
-      {'title': t['shortcuts'] ?? 'Shortcuts', 'icon': FontAwesomeIcons.keyboard, 'key': 'Shortcuts'},
-      {'title': t['data'] ?? 'Data', 'icon': FontAwesomeIcons.database, 'key': 'Data'},
-      {'title': t['proxy'] ?? 'Proxy', 'icon': FontAwesomeIcons.networkWired, 'key': 'Proxy'},
-      {'title': t['about'] ?? 'About', 'icon': FontAwesomeIcons.circleInfo, 'key': 'About'},
+      {
+        'title': t['general'] ?? 'General',
+        'icon': FontAwesomeIcons.gear,
+        'key': 'General'
+      },
+      {
+        'title': t['themes'] ?? 'Themes',
+        'icon': FontAwesomeIcons.palette,
+        'key': 'Themes'
+      },
+      {
+        'title': t['shortcuts'] ?? 'Shortcuts',
+        'icon': FontAwesomeIcons.keyboard,
+        'key': 'Shortcuts'
+      },
+      {
+        'title': t['data'] ?? 'Data',
+        'icon': FontAwesomeIcons.database,
+        'key': 'Data'
+      },
+      {
+        'title': t['proxy'] ?? 'Proxy',
+        'icon': FontAwesomeIcons.networkWired,
+        'key': 'Proxy'
+      },
+      {
+        'title': t['about'] ?? 'About',
+        'icon': FontAwesomeIcons.circleInfo,
+        'key': 'About'
+      },
     ];
   }
 
@@ -216,15 +240,18 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
             Padding(
               padding: const EdgeInsets.only(top: 8, bottom: 8),
               child: Text(
-                category.name,
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                t[category.name] ?? category.name,
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey),
               ),
             ),
             ...category.items.map((item) {
               return Column(
                 children: [
                   _buildSettingRow(
-                    title: item.title,
+                    title: t[item.title] ?? item.title,
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: item.keys.map((k) {
@@ -232,7 +259,8 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
                           return Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 4),
                             child: Text(t['through'] ?? 'through',
-                                style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey)),
                           );
                         }
                         return _buildKeycap(k);
@@ -270,8 +298,9 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
   }
 
   void _exportData() async {
+    final t = ref.read(translationsProvider);
     String? outputFile = await FilePicker.platform.saveFile(
-      dialogTitle: 'Export Data',
+      dialogTitle: t['export_data'] ?? 'Export Data',
       fileName: 'post_lens_export.json',
       type: FileType.custom,
       allowedExtensions: ['json', 'csv'],
@@ -293,19 +322,22 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
         }
 
         if (mounted) {
-          ToastUtils.showInfo(context, 'Data exported successfully!');
+          ToastUtils.showInfo(context,
+              t['export_data_success'] ?? 'Data exported successfully!');
         }
       } catch (e) {
         if (mounted) {
-          ToastUtils.showInfo(context, 'Failed to export data: $e');
+          ToastUtils.showInfo(context,
+              '${t['export_data_failed'] ?? 'Failed to export data:'} $e');
         }
       }
     }
   }
 
   void _importData() async {
+    final t = ref.read(translationsProvider);
     FilePickerResult? result = await FilePicker.platform.pickFiles(
-      dialogTitle: 'Import Data',
+      dialogTitle: t['import_data'] ?? 'Import Data',
       type: FileType.custom,
       allowedExtensions: ['json', 'csv'],
     );
@@ -331,11 +363,13 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
         }
 
         if (mounted) {
-          ToastUtils.showInfo(context, 'Data imported successfully!');
+          ToastUtils.showInfo(context,
+              t['import_data_success'] ?? 'Data imported successfully!');
         }
       } catch (e) {
         if (mounted) {
-          ToastUtils.showInfo(context, 'Failed to import data: $e');
+          ToastUtils.showInfo(context,
+              '${t['import_data_failed'] ?? 'Failed to import data:'} $e');
         }
       }
     }
@@ -349,7 +383,9 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
         Text(t['export_data'] ?? 'Export data',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        Text(t['export_all_your_collectio'] ?? 'Export all your collections, environments, globals and header presets to a single dump file.',
+        Text(
+            t['export_all_your_collectio'] ??
+                'Export all your collections, environments, globals and header presets to a single dump file.',
             style: TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 16),
         Align(
@@ -362,14 +398,17 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0)),
             ),
-            child: Text(t['export_data'] ?? 'Export Data', style: TextStyle(fontSize: 12)),
+            child: Text(t['export_data'] ?? 'Export Data',
+                style: TextStyle(fontSize: 12)),
           ),
         ),
         const SizedBox(height: 32),
         Text(t['import_data'] ?? 'Import data',
             style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
-        Text(t['import_your_data_from_a_p'] ?? 'Import your data from a previous export.',
+        Text(
+            t['import_your_data_from_a_p'] ??
+                'Import your data from a previous export.',
             style: TextStyle(fontSize: 12, color: Colors.grey)),
         const SizedBox(height: 16),
         Align(
@@ -382,7 +421,8 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8.0)),
             ),
-            child: Text(t['import_data'] ?? 'Import Data', style: TextStyle(fontSize: 12)),
+            child: Text(t['import_data'] ?? 'Import Data',
+                style: TextStyle(fontSize: 12)),
           ),
         ),
       ],
@@ -397,11 +437,11 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 8),
       children: [
         Text(t['capture_proxy_mitm'] ?? 'Capture Proxy (MITM)',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         _buildSettingRow(
-          title: 'Enable SSL Proxying',
-          subtitle:
+          title: t['enable_ssl_proxying'] ?? 'Enable SSL Proxying',
+          subtitle: t['enable_ssl_proxying_desc'] ??
               'Decrypt HTTPS traffic. Requires installing the CA certificate.',
           trailing: _buildSwitch(
             settings.enableSslProxying,
@@ -413,16 +453,19 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
           ),
         ),
         const SizedBox(height: 8),
-        Text(t['root_certificate_manageme'] ?? 'Root certificate management has moved to the capture page.',
-          style: TextStyle(fontSize: 12, color: Colors.grey),
+        Text(
+          t['root_certificate_manageme'] ??
+              'Root certificate management has moved to the capture page.',
+          style: const TextStyle(fontSize: 12, color: Colors.grey),
         ),
         const SizedBox(height: 32),
         Text(t['system_proxy'] ?? 'System Proxy',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         _buildSettingRow(
-          title: 'Use System Proxy',
-          subtitle: 'Use the system proxy for sending requests.',
+          title: t['use_system_proxy'] ?? 'Use System Proxy',
+          subtitle: t['use_system_proxy_desc'] ??
+              'Use the system proxy for sending requests.',
           trailing: _buildSwitch(
             settings.systemProxy,
             onChanged: (v) {
@@ -434,10 +477,10 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
         ),
         const SizedBox(height: 32),
         Text(t['custom_proxy'] ?? 'Custom Proxy',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         _buildSettingRow(
-          title: 'Add a custom proxy configuration',
+          title: t['add_custom_proxy'] ?? 'Add a custom proxy configuration',
           trailing: _buildSwitch(
             settings.customProxyEnabled,
             onChanged: (v) {
@@ -451,15 +494,12 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
           const SizedBox(height: 16),
           Row(
             children: [
-              Text(t['proxy_server'] ?? 'Proxy Server', style: TextStyle(fontSize: 12)),
+              Text(t['proxy_server'] ?? 'Proxy Server',
+                  style: const TextStyle(fontSize: 12)),
               const SizedBox(width: 16),
               Expanded(
-                child: Container(
+                child: SizedBox(
                   height: 36,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Theme.of(context).dividerColor),
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
                   child: TextFormField(
                     controller: _proxyUrlController,
                     onChanged: (v) {
@@ -467,11 +507,21 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
                             settings.copyWith(customProxyUrl: v),
                           );
                     },
-                    decoration: const InputDecoration(
-                      hintText: 'e.g. 127.0.0.1:8080 or http://proxy:80',
-                      border: InputBorder.none,
-                      contentPadding:
-                          EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                    decoration: InputDecoration(
+                      hintText: t['proxy_server_hint'] ??
+                          'e.g. 127.0.0.1:8080 or http://proxy:80',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                        borderSide:
+                            BorderSide(color: Theme.of(context).dividerColor),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8.0),
+                        borderSide:
+                            BorderSide(color: Theme.of(context).dividerColor),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 10),
                       isDense: true,
                     ),
                     style: const TextStyle(fontSize: 12),
@@ -523,8 +573,8 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
         const SizedBox(height: 8),
         _buildSettingRow(
           title: t['request_timeout'] ?? 'Request timeout',
-          subtitle:
-              t['request_timeout_desc'] ?? 'Set how long a request should wait for a response before timing out. To never time out, set to 0.',
+          subtitle: t['request_timeout_desc'] ??
+              'Set how long a request should wait for a response before timing out. To never time out, set to 0.',
           trailing: _buildNumberInput(
             _timeoutController,
             'ms',
@@ -539,8 +589,8 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
         _buildDivider(),
         _buildSettingRow(
           title: t['max_response_size'] ?? 'Max response size',
-          subtitle:
-              t['max_response_size_desc'] ?? 'Set the maximum size of a response to download. To download a response of any size, set to 0.',
+          subtitle: t['max_response_size_desc'] ??
+              'Set the maximum size of a response to download. To download a response of any size, set to 0.',
           trailing: _buildNumberInput(
             _maxSizeController,
             'MB',
@@ -567,7 +617,8 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
         _buildDivider(),
         _buildSettingRow(
           title: t['disable_cookies_setting'] ?? 'Disable cookies',
-          subtitle: t['disable_cookies_desc'] ?? 'Disable cookie jar for all requests.',
+          subtitle: t['disable_cookies_desc'] ??
+              'Disable cookie jar for all requests.',
           trailing: _buildSwitch(
             settings.disableCookies,
             onChanged: (v) {

@@ -1,17 +1,19 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:crypto/crypto.dart';
 import 'base_tool_widget.dart';
+import '../../providers/settings_provider.dart';
 
 // Hash Tool
-class HashTool extends StatefulWidget {
+class HashTool extends ConsumerStatefulWidget {
   const HashTool({super.key});
   @override
-  State<HashTool> createState() => _HashToolState();
+  ConsumerState<HashTool> createState() => _HashToolState();
 }
 
-class _HashToolState extends State<HashTool> {
+class _HashToolState extends ConsumerState<HashTool> {
   final TextEditingController _leftController = TextEditingController();
   final TextEditingController _rightController = TextEditingController();
   String _selectedAlgo = 'MD5';
@@ -42,21 +44,22 @@ class _HashToolState extends State<HashTool> {
 
   @override
   Widget build(BuildContext context) {
+    final t = ref.watch(translationsProvider);
     return DualPaneToolWidget(
-      title: 'Hash',
+      title: t['hash'] ?? 'Hash',
       leftPane: ToolTextField(
-          label: 'Text (UTF-8)',
+          label: t['text_utf8'] ?? 'Text (UTF-8)',
           controller: _leftController,
-          hintText: 'Enter text to hash...'),
+          hintText: t['enter_text_to_hash'] ?? 'Enter text to hash...'),
       rightPane: ToolTextField(
-          label: '$_selectedAlgo Hex',
+          label: '$_selectedAlgo ${t['hex'] ?? 'Hex'}',
           controller: _rightController,
           readOnly: true),
       centerControls: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           PopupMenuButton<String>(
-            tooltip: 'Algorithm',
+            tooltip: t['algorithm'] ?? 'Algorithm',
             position: PopupMenuPosition.under,
             padding: EdgeInsets.zero,
             color: Theme.of(context).colorScheme.surface,
@@ -121,7 +124,7 @@ class _HashToolState extends State<HashTool> {
             ),
           ),
           const SizedBox(width: 16),
-          ToolButton(onPressed: _compute, icon: Icons.arrow_downward, label: 'Hash'),
+          ToolButton(onPressed: _compute, icon: Icons.arrow_downward, label: t['hash'] ?? 'Hash'),
         ],
       ),
     );

@@ -43,7 +43,8 @@ class _XmlToolState extends ConsumerState<XmlTool> {
         });
         _rightController.text = formatted.trim();
       } catch (e) {
-        _rightController.text = 'Error formatting XML: $e';
+        final t = ref.read(translationsProvider);
+        _rightController.text = '${t['error_formatting_xml'] ?? 'Error formatting XML: '}$e';
       }
     });
   }
@@ -61,15 +62,15 @@ class _XmlToolState extends ConsumerState<XmlTool> {
     return DualPaneToolWidget(
       title: t['xml_format'] ?? 'XML Format (Simple)',
       leftPane: ToolTextField(
-          label: 'Raw XML',
+          label: t['raw_xml'] ?? 'Raw XML',
           controller: _leftController,
           hintText: '<root><item>text</item></root>'),
       rightPane:
-          ToolTextField(label: 'Formatted XML', controller: _rightController),
+          ToolTextField(label: t['formatted_xml'] ?? 'Formatted XML', controller: _rightController),
       centerControls: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ToolButton(onPressed: _format, icon: Icons.format_indent_increase, label: 'Format'),
+          ToolButton(onPressed: _format, icon: Icons.format_indent_increase, label: t['format'] ?? 'Format'),
         ],
       ),
     );

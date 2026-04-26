@@ -31,16 +31,18 @@ class _HexToolState extends ConsumerState<HexTool> {
   void _toText() {
     setState(() {
       try {
+        final t = ref.read(translationsProvider);
         final hexStr = _rightController.text.replaceAll(RegExp(r'\s+'), '');
         if (hexStr.length % 2 != 0)
-          throw const FormatException('Invalid hex string length');
+          throw FormatException(t['invalid_hex_length'] ?? 'Invalid hex string length');
         final bytes = <int>[];
         for (int i = 0; i < hexStr.length; i += 2) {
           bytes.add(int.parse(hexStr.substring(i, i + 2), radix: 16));
         }
         _leftController.text = utf8.decode(bytes);
       } catch (e) {
-        _leftController.text = 'Error decoding Hex: $e';
+        final t = ref.read(translationsProvider);
+        _leftController.text = '${t['error_decoding_hex'] ?? 'Error decoding Hex: '}$e';
       }
     });
   }
@@ -57,14 +59,14 @@ class _HexToolState extends ConsumerState<HexTool> {
     final t = ref.watch(translationsProvider);
     return DualPaneToolWidget(
       title: t['text_hex_dump'] ?? 'Text <-> Hex Dump',
-      leftPane: ToolTextField(label: 'Text', controller: _leftController),
-      rightPane: ToolTextField(label: 'Hex Dump', controller: _rightController),
+      leftPane: ToolTextField(label: t['text'] ?? 'Text', controller: _leftController),
+      rightPane: ToolTextField(label: t['hex_dump'] ?? 'Hex Dump', controller: _rightController),
       centerControls: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ToolButton(onPressed: _toHex, icon: Icons.arrow_downward, label: 'Text -> Hex'),
+          ToolButton(onPressed: _toHex, icon: Icons.arrow_downward, label: t['text_to_hex'] ?? 'Text -> Hex'),
           const SizedBox(width: 16),
-          ToolButton(onPressed: _toText, icon: Icons.arrow_upward, label: 'Hex -> Text'),
+          ToolButton(onPressed: _toText, icon: Icons.arrow_upward, label: t['hex_to_text'] ?? 'Hex -> Text'),
         ],
       ),
     );

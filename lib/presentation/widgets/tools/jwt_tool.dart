@@ -17,6 +17,7 @@ class _JwtToolState extends ConsumerState<JwtTool> {
 
   void _decode() {
     setState(() {
+      final t = ref.read(translationsProvider);
       final token = _leftController.text.trim();
       if (token.isEmpty) {
         _rightController.text = '';
@@ -25,7 +26,7 @@ class _JwtToolState extends ConsumerState<JwtTool> {
       final parts = token.split('.');
       if (parts.length != 3) {
         _rightController.text =
-            'Invalid JWT token (must have 3 parts separated by dots)';
+            t['invalid_jwt_token'] ?? 'Invalid JWT token (must have 3 parts separated by dots)';
         return;
       }
       try {
@@ -42,7 +43,7 @@ class _JwtToolState extends ConsumerState<JwtTool> {
         });
         _rightController.text = prettyString;
       } catch (e) {
-        _rightController.text = 'Error decoding JWT: $e';
+        _rightController.text = '${t['error_decoding_jwt'] ?? 'Error decoding JWT: '}$e';
       }
     });
   }
@@ -53,17 +54,17 @@ class _JwtToolState extends ConsumerState<JwtTool> {
     return DualPaneToolWidget(
       title: t['jwt_decode'] ?? 'JWT Decode',
       leftPane: ToolTextField(
-          label: 'JWT Token',
+          label: t['jwt_token'] ?? 'JWT Token',
           controller: _leftController,
           hintText: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'),
       rightPane: ToolTextField(
-          label: 'Decoded Payload',
+          label: t['decoded_payload'] ?? 'Decoded Payload',
           controller: _rightController,
           readOnly: true),
       centerControls: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ToolButton(onPressed: _decode, icon: Icons.arrow_downward, label: 'Decode'),
+          ToolButton(onPressed: _decode, icon: Icons.arrow_downward, label: t['decode'] ?? 'Decode'),
         ],
       ),
     );

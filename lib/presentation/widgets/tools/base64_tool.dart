@@ -26,7 +26,8 @@ class _Base64ToolState extends ConsumerState<Base64Tool> {
         final bytes = utf8.encode(text);
         _rightController.text = base64.encode(bytes);
       } catch (e) {
-        _rightController.text = 'Error encoding: $e';
+        final t = ref.read(translationsProvider);
+        _rightController.text = '${t['error_encoding'] ?? 'Error encoding: '}$e';
       }
     });
   }
@@ -42,7 +43,8 @@ class _Base64ToolState extends ConsumerState<Base64Tool> {
         final bytes = base64.decode(text);
         _leftController.text = utf8.decode(bytes);
       } catch (e) {
-        _leftController.text = 'Error decoding: $e';
+        final t = ref.read(translationsProvider);
+        _leftController.text = '${t['error_decoding'] ?? 'Error decoding: '}$e';
       }
     });
   }
@@ -53,19 +55,19 @@ class _Base64ToolState extends ConsumerState<Base64Tool> {
     return DualPaneToolWidget(
       title: t['base64_encode_decode'] ?? 'Base64 Encode/Decode',
       leftPane: ToolTextField(
-          label: 'Text (UTF-8)',
+          label: t['text_utf8'] ?? 'Text (UTF-8)',
           controller: _leftController,
-          hintText: 'Enter text here...'),
+          hintText: t['enter_text_here'] ?? 'Enter text here...'),
       rightPane: ToolTextField(
-          label: 'Base64',
+          label: t['base64'] ?? 'Base64',
           controller: _rightController,
-          hintText: 'Enter Base64 here...'),
+          hintText: t['enter_base64_here'] ?? 'Enter Base64 here...'),
       centerControls: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          ToolButton(onPressed: _encode, icon: Icons.arrow_downward, label: 'Encode'),
+          ToolButton(onPressed: _encode, icon: Icons.arrow_downward, label: t['encode'] ?? 'Encode'),
           const SizedBox(width: 16),
-          ToolButton(onPressed: _decode, icon: Icons.arrow_upward, label: 'Decode'),
+          ToolButton(onPressed: _decode, icon: Icons.arrow_upward, label: t['decode'] ?? 'Decode'),
         ],
       ),
     );

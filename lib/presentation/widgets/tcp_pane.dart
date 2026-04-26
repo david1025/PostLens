@@ -768,6 +768,32 @@ class _TcpPaneState extends ConsumerState<TcpPane>
     );
   }
 
+  Widget _buildSettingCheckbox(
+      String label, bool value, Function(bool?) onChanged) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: CustomCheckbox(
+              value: value,
+              onChanged: onChanged,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(label,
+                style: TextStyle(
+                    color: Theme.of(context).textTheme.bodyMedium?.color,
+                    fontSize: 12)),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildReceiveSettingsTab() {
     final t = ref.watch(translationsProvider);
     return ListView(
@@ -779,41 +805,25 @@ class _TcpPaneState extends ConsumerState<TcpPane>
           value: _receiveHex,
           onChanged: (val) => setState(() => _receiveHex = val),
         ),
-        CustomCheckboxListTile(
-          title: Text(t['log_mode'] ?? 'Log mode display',
-              style: const TextStyle(fontSize: 12)),
-          value: _logMode,
-          onChanged: (val) => setState(() => _logMode = val ?? true),
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-          dense: true,
+        _buildSettingCheckbox(
+          t['log_mode'] ?? 'Log mode display',
+          _logMode,
+          (val) => setState(() => _logMode = val ?? true),
         ),
-        CustomCheckboxListTile(
-          title: Text(t['auto_wrap'] ?? 'Auto word wrap',
-              style: const TextStyle(fontSize: 12)),
-          value: _autoWrap,
-          onChanged: (val) => setState(() => _autoWrap = val ?? false),
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-          dense: true,
+        _buildSettingCheckbox(
+          t['auto_wrap'] ?? 'Auto word wrap',
+          _autoWrap,
+          (val) => setState(() => _autoWrap = val ?? false),
         ),
-        CustomCheckboxListTile(
-          title: Text(t['hide_receive'] ?? 'Do not display received data',
-              style: const TextStyle(fontSize: 12)),
-          value: _hideReceive,
-          onChanged: (val) => setState(() => _hideReceive = val ?? false),
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-          dense: true,
+        _buildSettingCheckbox(
+          t['hide_receive'] ?? 'Do not display received data',
+          _hideReceive,
+          (val) => setState(() => _hideReceive = val ?? false),
         ),
-        CustomCheckboxListTile(
-          title: Text(t['auto_scroll'] ?? 'Auto scroll',
-              style: const TextStyle(fontSize: 12)),
-          value: _autoScroll,
-          onChanged: (val) => setState(() => _autoScroll = val ?? true),
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-          dense: true,
+        _buildSettingCheckbox(
+          t['auto_scroll'] ?? 'Auto scroll',
+          _autoScroll,
+          (val) => setState(() => _autoScroll = val ?? true),
         ),
       ],
     );
@@ -830,43 +840,48 @@ class _TcpPaneState extends ConsumerState<TcpPane>
           value: _sendHex,
           onChanged: (val) => setState(() => _sendHex = val),
         ),
-        CustomCheckboxListTile(
-          title: Text(t['parse_escape'] ?? 'Auto parse escape characters',
-              style: const TextStyle(fontSize: 12)),
-          value: _parseEscape,
-          onChanged: (val) => setState(() => _parseEscape = val ?? true),
-          controlAffinity: ListTileControlAffinity.leading,
-          contentPadding: EdgeInsets.zero,
-          dense: true,
+        _buildSettingCheckbox(
+          t['parse_escape'] ?? 'Auto parse escape characters',
+          _parseEscape,
+          (val) => setState(() => _parseEscape = val ?? true),
         ),
-        Row(
-          children: [
-            CustomCheckbox(
-              value: _loopSend,
-              onChanged: _toggleLoopSend,
-            ),
-            const SizedBox(width: 8),
-            Text(t['loop_send'] ?? 'Loop send',
-                style: const TextStyle(fontSize: 12)),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 60,
-              height: 24,
-              child: TextField(
-                controller: _loopIntervalController,
-                style: const TextStyle(fontSize: 12),
-                decoration: const InputDecoration(
-                  isDense: true,
-                  contentPadding:
-                      EdgeInsets.symmetric(horizontal: 4, vertical: 4),
-                  border: OutlineInputBorder(),
+        Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: Row(
+            children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: CustomCheckbox(
+                  value: _loopSend,
+                  onChanged: _toggleLoopSend,
                 ),
-                enabled: _loopSend,
               ),
-            ),
-            const SizedBox(width: 4),
-            const Text('ms', style: TextStyle(fontSize: 12)),
-          ],
+              const SizedBox(width: 8),
+              Text(t['loop_send'] ?? 'Loop send',
+                  style: TextStyle(
+                      color: Theme.of(context).textTheme.bodyMedium?.color,
+                      fontSize: 12)),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 60,
+                height: 24,
+                child: TextField(
+                  controller: _loopIntervalController,
+                  style: const TextStyle(fontSize: 12),
+                  decoration: const InputDecoration(
+                    isDense: true,
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 4, vertical: 4),
+                    border: OutlineInputBorder(),
+                  ),
+                  enabled: _loopSend,
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Text('ms', style: TextStyle(fontSize: 12)),
+            ],
+          ),
         ),
       ],
     );
@@ -966,54 +981,57 @@ class _TcpPaneState extends ConsumerState<TcpPane>
       required String label2,
       required bool value,
       required ValueChanged<bool> onChanged}) {
-    return Row(
-      children: [
-        Container(
-          height: 24,
-          decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              InkWell(
-                onTap: () => onChanged(false),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: !value
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                        : Colors.transparent,
-                    borderRadius: const BorderRadius.horizontal(
-                        left: Radius.circular(12)),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16.0),
+      child: Row(
+        children: [
+          Container(
+            height: 24,
+            decoration: BoxDecoration(
+              border: Border.all(color: Theme.of(context).dividerColor),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                InkWell(
+                  onTap: () => onChanged(false),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: !value
+                          ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                          : Colors.transparent,
+                      borderRadius: const BorderRadius.horizontal(
+                          left: Radius.circular(12)),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(label1,
+                        style: const TextStyle(
+                            fontSize: 10, fontWeight: FontWeight.bold)),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(label1,
-                      style: const TextStyle(
-                          fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
-              ),
-              InkWell(
-                onTap: () => onChanged(true),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: value
-                        ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
-                        : Colors.transparent,
-                    borderRadius: const BorderRadius.horizontal(
-                        right: Radius.circular(12)),
+                InkWell(
+                  onTap: () => onChanged(true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    decoration: BoxDecoration(
+                      color: value
+                          ? Theme.of(context).colorScheme.primary.withOpacity(0.2)
+                          : Colors.transparent,
+                      borderRadius: const BorderRadius.horizontal(
+                          right: Radius.circular(12)),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(label2,
+                        style: const TextStyle(
+                            fontSize: 10, fontWeight: FontWeight.bold)),
                   ),
-                  alignment: Alignment.center,
-                  child: Text(label2,
-                      style: const TextStyle(
-                          fontSize: 10, fontWeight: FontWeight.bold)),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

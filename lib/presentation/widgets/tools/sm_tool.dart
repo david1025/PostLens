@@ -23,6 +23,7 @@ class _SmToolState extends ConsumerState<SmTool> {
 
   void _generateSm2Keys() {
     try {
+      final t = ref.read(translationsProvider);
       final keypair = sm.SM2.generateKeyPair();
       setState(() {
         _sm2PubKey = keypair.publicKey;
@@ -30,15 +31,17 @@ class _SmToolState extends ConsumerState<SmTool> {
         _keyController.text =
             'Pub: ${_sm2PubKey.substring(0, 16)}...\nPriv: ${_sm2PrivKey.substring(0, 16)}...';
       });
-      ToastUtils.showInfo(context, 'Generated SM2 Key Pair');
+      ToastUtils.showInfo(context, t['generated_sm2_key_pair'] ?? 'Generated SM2 Key Pair');
     } catch (e) {
-      ToastUtils.showInfo(context, 'Error generating keys: $e');
+      final t = ref.read(translationsProvider);
+      ToastUtils.showInfo(context, '${t['error_generating_keys'] ?? 'Error generating keys: '}$e');
     }
   }
 
   void _compute() {
     setState(() {
       try {
+        final t = ref.read(translationsProvider);
         if (_selectedAlgo == 'SM3 (Hash)') {
           final hash = sm.SM3.hash(_leftController.text);
           _rightController.text = hash;
@@ -46,7 +49,7 @@ class _SmToolState extends ConsumerState<SmTool> {
           final keyStr = _keyController.text.replaceAll('\n', '').trim();
           if (keyStr.length != 32) {
             _rightController.text =
-                'SM4 Key must be exactly 32 hex characters (16 bytes).';
+                t['sm4_key_must_be_32_hex'] ?? 'SM4 Key must be exactly 32 hex characters (16 bytes).';
             return;
           }
           final encrypted = sm.SM4.encrypt(
@@ -59,7 +62,7 @@ class _SmToolState extends ConsumerState<SmTool> {
           final keyStr = _keyController.text.replaceAll('\n', '').trim();
           if (keyStr.length != 32) {
             _rightController.text =
-                'SM4 Key must be exactly 32 hex characters (16 bytes).';
+                t['sm4_key_must_be_32_hex'] ?? 'SM4 Key must be exactly 32 hex characters (16 bytes).';
             return;
           }
           final decrypted = sm.SM4.decrypt(
@@ -70,7 +73,7 @@ class _SmToolState extends ConsumerState<SmTool> {
           _rightController.text = decrypted.toString();
         } else if (_selectedAlgo == 'SM2 (Encrypt)') {
           if (_sm2PubKey.isEmpty) {
-            _rightController.text = 'Please generate SM2 keys first.';
+            _rightController.text = t['please_generate_sm2_keys_first'] ?? 'Please generate SM2 keys first.';
             return;
           }
           final encrypted = sm.SM2.encrypt(
@@ -81,7 +84,7 @@ class _SmToolState extends ConsumerState<SmTool> {
           _rightController.text = encrypted;
         } else if (_selectedAlgo == 'SM2 (Decrypt)') {
           if (_sm2PrivKey.isEmpty) {
-            _rightController.text = 'Please generate SM2 keys first.';
+            _rightController.text = t['please_generate_sm2_keys_first'] ?? 'Please generate SM2 keys first.';
             return;
           }
           final decrypted = sm.SM2.decrypt(
@@ -92,7 +95,8 @@ class _SmToolState extends ConsumerState<SmTool> {
           _rightController.text = decrypted;
         }
       } catch (e) {
-        _rightController.text = 'Error: $e';
+        final t = ref.read(translationsProvider);
+        _rightController.text = '${t['error'] ?? 'Error: '}$e';
       }
     });
   }
@@ -122,7 +126,7 @@ class _SmToolState extends ConsumerState<SmTool> {
                   ),
                   decoration: InputDecoration(
                     hintText:
-                        'Enter 32-char Hex key for SM4, or click generate for SM2',
+                        t['enter_32_char_hex_key'] ?? 'Enter 32-char Hex key for SM4, or click generate for SM2',
                     hintStyle:
                         const TextStyle(color: Colors.grey, fontSize: 12),
                     border: OutlineInputBorder(
@@ -158,16 +162,16 @@ class _SmToolState extends ConsumerState<SmTool> {
           child: DualPaneToolWidget(
             title: t['sm_algorithms'] ?? 'SM (SM2/SM3/SM4) Algorithms',
             leftPane:
-                ToolTextField(label: 'Input Data', controller: _leftController),
+                ToolTextField(label: t['input_data'] ?? 'Input Data', controller: _leftController),
             rightPane: ToolTextField(
-                label: 'Output Result',
+                label: t['output_result'] ?? 'Output Result',
                 controller: _rightController,
                 readOnly: true),
             centerControls: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 PopupMenuButton<String>(
-                  tooltip: 'Algorithm',
+                  tooltip: t['algorithm'] ?? 'Algorithm',
                   position: PopupMenuPosition.under,
                   padding: EdgeInsets.zero,
                   color: Theme.of(context).colorScheme.surface,
@@ -236,7 +240,7 @@ class _SmToolState extends ConsumerState<SmTool> {
                   ),
                 ),
                 const SizedBox(width: 16),
-                ToolButton(onPressed: _compute, icon: Icons.arrow_downward, label: 'Compute'),
+                ToolButton(onPressed: _compute, icon: Icons.arrow_downward, label: t['compute'] ?? 'Compute'),
               ],
             ),
           ),

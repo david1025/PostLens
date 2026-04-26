@@ -28,7 +28,8 @@ class _RsaToolState extends ConsumerState<RsaTool> {
         final encrypted = encrypter.encrypt(_leftController.text);
         _rightController.text = encrypted.base64;
       } catch (e) {
-        _rightController.text = 'Encryption Error: $e';
+        final t = ref.read(translationsProvider);
+        _rightController.text = '${t['encryption_error'] ?? 'Encryption Error: '}$e';
       }
     });
   }
@@ -44,7 +45,8 @@ class _RsaToolState extends ConsumerState<RsaTool> {
         final decrypted = encrypter.decrypt64(_rightController.text.trim());
         _leftController.text = decrypted;
       } catch (e) {
-        _leftController.text = 'Decryption Error: $e';
+        final t = ref.read(translationsProvider);
+        _leftController.text = '${t['decryption_error'] ?? 'Decryption Error: '}$e';
       }
     });
   }
@@ -150,15 +152,15 @@ class _RsaToolState extends ConsumerState<RsaTool> {
           child: DualPaneToolWidget(
             title: t['rsa_encrypt_decrypt'] ?? 'RSA Encrypt/Decrypt',
             leftPane:
-                ToolTextField(label: 'Plaintext', controller: _leftController),
+                ToolTextField(label: t['plaintext'] ?? 'Plaintext', controller: _leftController),
             rightPane: ToolTextField(
-                label: 'Ciphertext (Base64)', controller: _rightController),
+                label: t['ciphertext_base64'] ?? 'Ciphertext (Base64)', controller: _rightController),
             centerControls: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                ToolButton(onPressed: _encrypt, icon: Icons.arrow_downward, label: 'Encrypt (with Public Key)'),
+                ToolButton(onPressed: _encrypt, icon: Icons.arrow_downward, label: t['encrypt_with_public'] ?? 'Encrypt (with Public Key)'),
                 const SizedBox(width: 16),
-                ToolButton(onPressed: _decrypt, icon: Icons.arrow_upward, label: 'Decrypt (with Private Key)'),
+                ToolButton(onPressed: _decrypt, icon: Icons.arrow_upward, label: t['decrypt_with_private'] ?? 'Decrypt (with Private Key)'),
               ],
             ),
           ),
