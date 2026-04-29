@@ -38,16 +38,12 @@ class DocEditor extends StatefulWidget {
 class _DocEditorState extends State<DocEditor> {
   static const _debounceDuration = Duration(milliseconds: 350);
   static const _contentFontSize = 12.0;
-  static const _toolbarButtonSize = 20.0;
-  static const _toolbarIconSize = 10.0;
-  static const _toolbarReservedHeight = 34.0;
 
   DocEditorMode _mode = DocEditorMode.richText;
   MarkdownViewMode _markdownViewMode = MarkdownViewMode.edit;
   late String _markdown;
   late QuillController _quillController;
   late FocusNode _richFocusNode;
-  var _toolbarHovering = false;
   Timer? _debounce;
 
   @override
@@ -133,6 +129,38 @@ class _DocEditorState extends State<DocEditor> {
     setState(() => _markdownViewMode = mode);
   }
 
+  Widget _buildTab(String text, MarkdownViewMode mode) {
+    final isActive = _markdownViewMode == mode;
+    final color = isActive
+        ? Theme.of(context).colorScheme.primary
+        : Theme.of(context).textTheme.bodyMedium?.color?.withOpacity(0.7);
+
+    return InkWell(
+      onTap: () => _switchMarkdownViewMode(mode),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        decoration: BoxDecoration(
+          border: Border(
+            bottom: BorderSide(
+              color: isActive
+                  ? Theme.of(context).colorScheme.primary
+                  : Colors.transparent,
+              width: 2,
+            ),
+          ),
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isActive ? FontWeight.w600 : FontWeight.normal,
+            color: color,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final baseStyles = DefaultStyles.getInstance(context);
@@ -153,272 +181,172 @@ class _DocEditorState extends State<DocEditor> {
       ),
     );
 
-    final segmentedStyle = ButtonStyle(
-      padding: WidgetStateProperty.all(
-        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      ),
-      textStyle: WidgetStateProperty.all(
-        const TextStyle(fontSize: 12),
-      ),
-      visualDensity: VisualDensity.compact,
-      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-    );
-
-    final showToolbar = _mode == DocEditorMode.richText &&
-        (!widget.hideToolbarWhenUnfocused ||
-            _richFocusNode.hasFocus ||
-            _toolbarHovering);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            if (widget.title != null) ...[
-              Text(
-                widget.title!,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey,
-                ),
-              ),
-              const SizedBox(width: 12),
-            ],
-            Expanded(
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    SegmentedButton<DocEditorMode>(
-                      style: segmentedStyle,
-                      segments: [
-                        ButtonSegment(
-                          value: DocEditorMode.richText,
-                          label: Text(widget.richTextLabel),
-                        ),
-                        ButtonSegment(
-                          value: DocEditorMode.markdown,
-                          label: Text(widget.markdownLabel),
-                        ),
-                      ],
-                      selected: {_mode},
-                      onSelectionChanged: (s) => _switchMode(s.first),
-                      showSelectedIcon: false,
-                    ),
-                    if (_mode == DocEditorMode.markdown)
-                      SegmentedButton<MarkdownViewMode>(
-                        style: segmentedStyle,
-                        segments: [
-                          ButtonSegment(
-                            value: MarkdownViewMode.edit,
-                            label: Text(widget.editLabel),
-                          ),
-                          ButtonSegment(
-                            value: MarkdownViewMode.preview,
-                            label: Text(widget.previewLabel),
-                          ),
-                        ],
-                        selected: {_markdownViewMode},
-                        onSelectionChanged: (s) =>
-                            _switchMarkdownViewMode(s.first),
-                        showSelectedIcon: false,
-                      ),
-                  ],
-                ),
-              ),
+        if (widget.title != null) ...[
+          Text(
+            widget.title!,
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
+          ),
+          const SizedBox(height: 8),
+        ],
         Container(
           height: 360,
           decoration: BoxDecoration(
-            border: _mode == DocEditorMode.markdown
-                ? Border.all(color: Theme.of(context).dividerColor)
-                : null,
+            border: Border.all(color: Theme.of(context).dividerColor),
             borderRadius: BorderRadius.circular(8),
             color: Theme.of(context).colorScheme.surface,
           ),
           clipBehavior: Clip.antiAlias,
-          child: _mode == DocEditorMode.markdown
-              ? _markdownViewMode == MarkdownViewMode.edit
-                  ? AppCodeEditor(
-                      key: ValueKey('${_mode}-${_markdownViewMode}'),
-                      text: _markdown,
-                      hint: '',
-                      language: 'markdown',
-                      onChanged: (v) {
-                        if (v == _markdown) return;
-                        setState(() => _markdown = v);
-                        _scheduleEmit(v);
-                      },
-                    )
-                  : QuillEditor.basic(
-                      key: ValueKey('${_mode}-${_markdownViewMode}'),
-                      controller: QuillController(
-                        document:
-                            Document.fromDelta(markdownToQuillDelta(_markdown)),
-                        selection: const TextSelection.collapsed(offset: 0),
-                        readOnly: true,
-                      ),
-                      config: QuillEditorConfig(
-                        autoFocus: false,
-                        expands: true,
-                        padding: const EdgeInsets.all(12),
-                        scrollable: true,
-                        customStyles: customStyles,
-                      ),
-                    )
-              : Stack(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Header Row
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surface,
+                  border: Border(
+                    bottom: BorderSide(color: Theme.of(context).dividerColor),
+                  ),
+                ),
+                child: Row(
                   children: [
-                    Positioned.fill(
-                      top: _toolbarReservedHeight,
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border:
-                              Border.all(color: Theme.of(context).dividerColor),
-                          borderRadius: BorderRadius.circular(8),
-                          color: Theme.of(context).colorScheme.surface,
-                        ),
-                        clipBehavior: Clip.antiAlias,
-                        child: QuillEditor.basic(
-                          controller: _quillController,
-                          focusNode: _richFocusNode,
-                          config: QuillEditorConfig(
-                            autoFocus: false,
-                            expands: true,
-                            padding: const EdgeInsets.all(12),
-                            scrollable: true,
-                            customStyles: customStyles,
-                          ),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      top: 0,
-                      height: _toolbarReservedHeight,
-                      child: IgnorePointer(
-                        ignoring: !showToolbar,
-                        child: AnimatedOpacity(
-                          opacity: showToolbar ? 1 : 0,
-                          duration: const Duration(milliseconds: 140),
-                          child: Container(
-                            color: Theme.of(context).colorScheme.surface,
-                            alignment: Alignment.topLeft,
-                            child: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                DefaultTextStyle.merge(
-                                  style: const TextStyle(
-                                      fontSize: _contentFontSize),
-                                  child: MouseRegion(
-                                    onEnter: (_) => setState(
-                                        () => _toolbarHovering = true),
-                                    onExit: (_) => setState(
-                                        () => _toolbarHovering = false),
-                                    child: QuillSimpleToolbar(
-                                      controller: _quillController,
-                                      config: QuillSimpleToolbarConfig(
-                                        multiRowsDisplay: false,
-                                        axis: Axis.horizontal,
-                                        toolbarSize: _toolbarButtonSize,
-                                        toolbarSectionSpacing: 2,
-                                        toolbarRunSpacing: 2,
-                                        showDividers: false,
-                                        showFontFamily: false,
-                                        showFontSize: false,
-                                        showHeaderStyle: false,
-                                        showSearchButton: false,
-                                        buttonOptions:
-                                            QuillSimpleToolbarButtonOptions(
-                                          base: QuillToolbarBaseButtonOptions(
-                                            iconSize: _toolbarIconSize,
-                                            iconButtonFactor: 0.8,
-                                            iconTheme: QuillIconTheme(
-                                              iconButtonUnselectedData:
-                                                  IconButtonData(
-                                                iconSize: _toolbarIconSize,
-                                                padding: const EdgeInsets.all(2),
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                splashRadius:
-                                                    _toolbarButtonSize / 2,
-                                                constraints:
-                                                    BoxConstraints.tightFor(
-                                                  width: _toolbarButtonSize,
-                                                  height: _toolbarButtonSize,
-                                                ),
-                                                style: ButtonStyle(
-                                                  minimumSize:
-                                                      WidgetStateProperty.all(
-                                                    Size.square(
-                                                        _toolbarButtonSize),
-                                                  ),
-                                                  padding:
-                                                      WidgetStateProperty.all(
-                                                    EdgeInsets.zero,
-                                                  ),
-                                                  tapTargetSize:
-                                                      MaterialTapTargetSize
-                                                          .shrinkWrap,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                ),
-                                              ),
-                                              iconButtonSelectedData:
-                                                  IconButtonData(
-                                                iconSize: _toolbarIconSize,
-                                                padding: const EdgeInsets.all(2),
-                                                visualDensity:
-                                                    VisualDensity.compact,
-                                                splashRadius:
-                                                    _toolbarButtonSize / 2,
-                                                constraints:
-                                                    BoxConstraints.tightFor(
-                                                  width: _toolbarButtonSize,
-                                                  height: _toolbarButtonSize,
-                                                ),
-                                                style: ButtonStyle(
-                                                  minimumSize:
-                                                      WidgetStateProperty.all(
-                                                    Size.square(
-                                                        _toolbarButtonSize),
-                                                  ),
-                                                  padding:
-                                                      WidgetStateProperty.all(
-                                                    EdgeInsets.zero,
-                                                  ),
-                                                  tapTargetSize:
-                                                      MaterialTapTargetSize
-                                                          .shrinkWrap,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
+                    Expanded(
+                      child: _mode == DocEditorMode.richText
+                          ? Theme(
+                              data: Theme.of(context).copyWith(
+                                canvasColor: Theme.of(context).colorScheme.surface,
+                              ),
+                              child: QuillSimpleToolbar(
+                                controller: _quillController,
+                                config: QuillSimpleToolbarConfig(
+                                  multiRowsDisplay: false,
+                                  showFontFamily: false,
+                                  showFontSize: false,
+                                  showHeaderStyle: true,
+                                  showUndo: false,
+                                  showRedo: false,
+                                  showSearchButton: false,
+                                  showSubscript: false,
+                                  showSuperscript: false,
+                                  showColorButton: false,
+                                  showBackgroundColorButton: false,
+                                  showClearFormat: false,
+                                  showAlignmentButtons: false,
+                                  showDirection: false,
+                                  showIndent: false,
+                                  buttonOptions: QuillSimpleToolbarButtonOptions(
+                                    base: QuillToolbarBaseButtonOptions(
+                                      iconSize: 14,
+                                      iconButtonFactor: 1.0,
+                                      iconTheme: QuillIconTheme(
+                                        iconButtonUnselectedData: IconButtonData(
+                                          padding: const EdgeInsets.all(4),
+                                          visualDensity: VisualDensity.compact,
+                                        ),
+                                        iconButtonSelectedData: IconButtonData(
+                                          padding: const EdgeInsets.all(4),
+                                          visualDensity: VisualDensity.compact,
                                         ),
                                       ),
                                     ),
                                   ),
                                 ),
-                                Divider(
-                                  height: 1,
-                                  color: Theme.of(context).dividerColor,
-                                ),
+                              ),
+                            )
+                          : Row(
+                              children: [
+                                const SizedBox(width: 8),
+                                _buildTab(widget.markdownLabel, MarkdownViewMode.edit),
+                                const SizedBox(width: 16),
+                                _buildTab(widget.previewLabel, MarkdownViewMode.preview),
                               ],
                             ),
-                          ),
+                    ),
+                    const SizedBox(width: 8),
+                    Container(
+                      height: 24,
+                      width: 1,
+                      color: Theme.of(context).dividerColor,
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                    ),
+                    DropdownButtonHideUnderline(
+                      child: DropdownButton<DocEditorMode>(
+                        value: _mode,
+                        icon: const Icon(Icons.keyboard_arrow_down, size: 16),
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Theme.of(context).textTheme.bodyMedium?.color,
                         ),
+                        isDense: true,
+                        items: [
+                          DropdownMenuItem(
+                            value: DocEditorMode.richText,
+                            child: Text(widget.richTextLabel),
+                          ),
+                          DropdownMenuItem(
+                            value: DocEditorMode.markdown,
+                            child: Text(widget.markdownLabel),
+                          ),
+                        ],
+                        onChanged: (mode) {
+                          if (mode != null) _switchMode(mode);
+                        },
                       ),
                     ),
+                    const SizedBox(width: 8),
                   ],
                 ),
+              ),
+              // Content Area
+              Expanded(
+                child: _mode == DocEditorMode.markdown
+                    ? _markdownViewMode == MarkdownViewMode.edit
+                        ? AppCodeEditor(
+                            key: ValueKey('${_mode}-${_markdownViewMode}'),
+                            text: _markdown,
+                            hint: '',
+                            language: 'markdown',
+                            onChanged: (v) {
+                              if (v == _markdown) return;
+                              setState(() => _markdown = v);
+                              _scheduleEmit(v);
+                            },
+                          )
+                        : QuillEditor.basic(
+                            key: ValueKey('${_mode}-${_markdownViewMode}'),
+                            controller: QuillController(
+                              document: Document.fromDelta(markdownToQuillDelta(_markdown)),
+                              selection: const TextSelection.collapsed(offset: 0),
+                              readOnly: true,
+                            ),
+                            config: QuillEditorConfig(
+                              autoFocus: false,
+                              expands: true,
+                              padding: const EdgeInsets.all(12),
+                              scrollable: true,
+                              customStyles: customStyles,
+                            ),
+                          )
+                    : QuillEditor.basic(
+                        controller: _quillController,
+                        focusNode: _richFocusNode,
+                        config: QuillEditorConfig(
+                          autoFocus: false,
+                          expands: true,
+                          padding: const EdgeInsets.all(12),
+                          scrollable: true,
+                          customStyles: customStyles,
+                        ),
+                      ),
+              ),
+            ],
+          ),
         ),
       ],
     );
