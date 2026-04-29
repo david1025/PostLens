@@ -38,9 +38,9 @@ class DocEditor extends StatefulWidget {
 class _DocEditorState extends State<DocEditor> {
   static const _debounceDuration = Duration(milliseconds: 350);
   static const _contentFontSize = 12.0;
-  static const _toolbarButtonSize = 22.0;
-  static const _toolbarIconSize = 12.0;
-  static const _toolbarReservedHeight = 40.0;
+  static const _toolbarButtonSize = 20.0;
+  static const _toolbarIconSize = 10.0;
+  static const _toolbarReservedHeight = 34.0;
 
   DocEditorMode _mode = DocEditorMode.richText;
   MarkdownViewMode _markdownViewMode = MarkdownViewMode.edit;
@@ -323,7 +323,7 @@ class _DocEditorState extends State<DocEditor> {
                                         () => _toolbarHovering = false),
                                     child: QuillSimpleToolbar(
                                       controller: _quillController,
-                                      config: const QuillSimpleToolbarConfig(
+                                      config: QuillSimpleToolbarConfig(
                                         multiRowsDisplay: false,
                                         axis: Axis.horizontal,
                                         toolbarSize: _toolbarButtonSize,
@@ -334,29 +334,72 @@ class _DocEditorState extends State<DocEditor> {
                                         showFontSize: false,
                                         showHeaderStyle: false,
                                         showSearchButton: false,
-                                        iconTheme: QuillIconTheme(
-                                          iconButtonUnselectedData:
-                                              IconButtonData(
+                                        buttonOptions:
+                                            QuillSimpleToolbarButtonOptions(
+                                          base: QuillToolbarBaseButtonOptions(
                                             iconSize: _toolbarIconSize,
-                                            padding: EdgeInsets.zero,
-                                            visualDensity:
-                                                VisualDensity.compact,
-                                            constraints:
-                                                BoxConstraints.tightFor(
-                                              width: _toolbarButtonSize,
-                                              height: _toolbarButtonSize,
-                                            ),
-                                          ),
-                                          iconButtonSelectedData:
-                                              IconButtonData(
-                                            iconSize: _toolbarIconSize,
-                                            padding: EdgeInsets.zero,
-                                            visualDensity:
-                                                VisualDensity.compact,
-                                            constraints:
-                                                BoxConstraints.tightFor(
-                                              width: _toolbarButtonSize,
-                                              height: _toolbarButtonSize,
+                                            iconButtonFactor: 0.8,
+                                            iconTheme: QuillIconTheme(
+                                              iconButtonUnselectedData:
+                                                  IconButtonData(
+                                                iconSize: _toolbarIconSize,
+                                                padding: const EdgeInsets.all(2),
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                splashRadius:
+                                                    _toolbarButtonSize / 2,
+                                                constraints:
+                                                    BoxConstraints.tightFor(
+                                                  width: _toolbarButtonSize,
+                                                  height: _toolbarButtonSize,
+                                                ),
+                                                style: ButtonStyle(
+                                                  minimumSize:
+                                                      WidgetStateProperty.all(
+                                                    Size.square(
+                                                        _toolbarButtonSize),
+                                                  ),
+                                                  padding:
+                                                      WidgetStateProperty.all(
+                                                    EdgeInsets.zero,
+                                                  ),
+                                                  tapTargetSize:
+                                                      MaterialTapTargetSize
+                                                          .shrinkWrap,
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                ),
+                                              ),
+                                              iconButtonSelectedData:
+                                                  IconButtonData(
+                                                iconSize: _toolbarIconSize,
+                                                padding: const EdgeInsets.all(2),
+                                                visualDensity:
+                                                    VisualDensity.compact,
+                                                splashRadius:
+                                                    _toolbarButtonSize / 2,
+                                                constraints:
+                                                    BoxConstraints.tightFor(
+                                                  width: _toolbarButtonSize,
+                                                  height: _toolbarButtonSize,
+                                                ),
+                                                style: ButtonStyle(
+                                                  minimumSize:
+                                                      WidgetStateProperty.all(
+                                                    Size.square(
+                                                        _toolbarButtonSize),
+                                                  ),
+                                                  padding:
+                                                      WidgetStateProperty.all(
+                                                    EdgeInsets.zero,
+                                                  ),
+                                                  tapTargetSize:
+                                                      MaterialTapTargetSize
+                                                          .shrinkWrap,
+                                                  visualDensity:
+                                                      VisualDensity.compact,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ),
