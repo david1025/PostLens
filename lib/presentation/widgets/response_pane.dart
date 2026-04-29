@@ -156,7 +156,6 @@ class _ResponsePaneState extends ConsumerState<ResponsePane>
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(8.0),
-          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Center(
           child: CircularProgressIndicator(
@@ -170,7 +169,6 @@ class _ResponsePaneState extends ConsumerState<ResponsePane>
         decoration: BoxDecoration(
           color: Theme.of(context).scaffoldBackgroundColor,
           borderRadius: BorderRadius.circular(8.0),
-          border: Border.all(color: Theme.of(context).dividerColor),
         ),
         child: Center(
           child: Text(
