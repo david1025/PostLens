@@ -47,13 +47,6 @@ Delta markdownToQuillDelta(String markdown) {
     delta.insert('\n');
   }
 
-  if (delta.isNotEmpty) {
-    final last = delta.last;
-    if (last.data is String && (last.data as String).isEmpty) {
-      delta.pop();
-    }
-  }
-
   return delta;
 }
 
