@@ -38,9 +38,9 @@ class DocEditor extends StatefulWidget {
 class _DocEditorState extends State<DocEditor> {
   static const _debounceDuration = Duration(milliseconds: 350);
   static const _contentFontSize = 12.0;
-  static const _toolbarButtonSize = 26.0;
-  static const _toolbarIconSize = 14.0;
-  static const _toolbarReservedHeight = 56.0;
+  static const _toolbarButtonSize = 22.0;
+  static const _toolbarIconSize = 12.0;
+  static const _toolbarReservedHeight = 40.0;
 
   DocEditorMode _mode = DocEditorMode.richText;
   MarkdownViewMode _markdownViewMode = MarkdownViewMode.edit;
@@ -236,7 +236,9 @@ class _DocEditorState extends State<DocEditor> {
         Container(
           height: 360,
           decoration: BoxDecoration(
-            border: Border.all(color: Theme.of(context).dividerColor),
+            border: _mode == DocEditorMode.markdown
+                ? Border.all(color: Theme.of(context).dividerColor)
+                : null,
             borderRadius: BorderRadius.circular(8),
             color: Theme.of(context).colorScheme.surface,
           ),
@@ -272,18 +274,26 @@ class _DocEditorState extends State<DocEditor> {
                     )
               : Stack(
                   children: [
-                    Padding(
-                      padding:
-                          const EdgeInsets.only(top: _toolbarReservedHeight),
-                      child: QuillEditor.basic(
-                        controller: _quillController,
-                        focusNode: _richFocusNode,
-                        config: QuillEditorConfig(
-                          autoFocus: false,
-                          expands: true,
-                          padding: const EdgeInsets.all(12),
-                          scrollable: true,
-                          customStyles: customStyles,
+                    Positioned.fill(
+                      top: _toolbarReservedHeight,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border:
+                              Border.all(color: Theme.of(context).dividerColor),
+                          borderRadius: BorderRadius.circular(8),
+                          color: Theme.of(context).colorScheme.surface,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: QuillEditor.basic(
+                          controller: _quillController,
+                          focusNode: _richFocusNode,
+                          config: QuillEditorConfig(
+                            autoFocus: false,
+                            expands: true,
+                            padding: const EdgeInsets.all(12),
+                            scrollable: true,
+                            customStyles: customStyles,
+                          ),
                         ),
                       ),
                     ),
@@ -314,6 +324,8 @@ class _DocEditorState extends State<DocEditor> {
                                     child: QuillSimpleToolbar(
                                       controller: _quillController,
                                       config: const QuillSimpleToolbarConfig(
+                                        multiRowsDisplay: false,
+                                        axis: Axis.horizontal,
                                         toolbarSize: _toolbarButtonSize,
                                         toolbarSectionSpacing: 2,
                                         toolbarRunSpacing: 2,
