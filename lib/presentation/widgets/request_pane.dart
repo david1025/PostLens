@@ -337,7 +337,7 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     final controller = TextEditingController();
     final result = await AppOverlayDialogs.showModalLike<String>(
       context: context,
-      barrierLabel: 'Save Case',
+      barrierLabel: t['save_case'] ?? 'Save Case',
       builder: (context) => Dialog(
         child: SizedBox(
           width: 400,
@@ -480,12 +480,14 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     final collectionId = currentRequest.collectionId;
     if (collectionId == null) return;
 
+    final t = ref.read(translationsProvider);
     final collections = ref.read(collectionsProvider);
     final collection =
         collections.where((c) => c.id == collectionId).firstOrNull;
     if (collection == null) {
       if (context.mounted) {
-        ToastUtils.showInfo(context, 'Collection not found');
+        ToastUtils.showInfo(
+            context, t['collection_not_found'] ?? 'Collection not found');
       }
       return;
     }
@@ -509,7 +511,8 @@ class _RequestPaneState extends ConsumerState<RequestPane>
           .updateCollection(updatedCollection);
       ref.read(requestProvider.notifier).markSaved(updatedRequest);
       if (context.mounted) {
-        ToastUtils.showInfo(context, 'Case updated successfully');
+        ToastUtils.showInfo(context,
+            t['case_updated_successfully'] ?? 'Case updated successfully');
       }
       return;
     }
@@ -517,7 +520,10 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     final parentRequest = _findRequestNode(collection, currentRequest.id);
     if (parentRequest == null) {
       if (context.mounted) {
-        ToastUtils.showInfo(context, 'Request not found in collection');
+        ToastUtils.showInfo(
+            context,
+            t['request_not_found_in_collection'] ??
+                'Request not found in collection');
       }
       return;
     }
@@ -547,7 +553,8 @@ class _RequestPaneState extends ConsumerState<RequestPane>
         .read(collectionsProvider.notifier)
         .updateCollection(updatedCollection);
     if (context.mounted) {
-      ToastUtils.showInfo(context, 'Case saved successfully');
+      ToastUtils.showInfo(
+          context, t['case_saved_successfully'] ?? 'Case saved successfully');
     }
   }
 

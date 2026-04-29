@@ -6,6 +6,7 @@ import '../../domain/models/collection_model.dart';
 import '../../domain/models/http_request_model.dart';
 import '../providers/collection_provider.dart';
 import '../providers/request_provider.dart';
+import '../providers/settings_provider.dart';
 import '../widgets/save_request_dialog.dart';
 
 CollectionModel? _updateRequestOrCaseInCollection(
@@ -117,7 +118,9 @@ Future<HttpRequestModel?> saveRequest(
 
     if (targetCollection == null) {
       if (context.mounted) {
-        ToastUtils.showInfo(context, 'Collection not found');
+        final t = ref.read(translationsProvider);
+        ToastUtils.showInfo(
+            context, t['collection_not_found'] ?? 'Collection not found');
       }
       return null;
     }
@@ -156,7 +159,9 @@ Future<HttpRequestModel?> saveRequest(
 
   ref.read(requestProvider.notifier).markSaved(savedRequest);
   if (showSuccessMessage && context.mounted) {
-    ToastUtils.showInfo(context, 'Request saved successfully');
+    final t = ref.read(translationsProvider);
+    ToastUtils.showInfo(context,
+        t['request_saved_successfully'] ?? 'Request saved successfully');
   }
 
   return savedRequest;

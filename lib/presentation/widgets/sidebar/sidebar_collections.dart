@@ -881,7 +881,7 @@ extension SidebarCollectionsExt on _SidebarState {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                        '${t['rename'] ?? 'Rename'} ${isCollection ? (t['collection'] ?? 'Collection') : (node is CollectionFolder ? (t['folder'] ?? 'Folder') : (node is CollectionRequestCase ? 'Case' : (t['request'] ?? 'Request')))}',
+                        '${t['rename'] ?? 'Rename'} ${isCollection ? (t['collection'] ?? 'Collection') : (node is CollectionFolder ? (t['folder'] ?? 'Folder') : (node is CollectionRequestCase ? (t['case'] ?? 'Case') : (t['request'] ?? 'Request')))}',
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14)),
                     InkWell(

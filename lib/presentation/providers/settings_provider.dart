@@ -252,6 +252,13 @@ const _en = {
 
   'discard': 'Discard',
   'save_and_close': 'Save and Close',
+  'save_case': 'Save Case',
+  'case': 'Case',
+  'case_saved_successfully': 'Case saved successfully',
+  'case_updated_successfully': 'Case updated successfully',
+  'collection_not_found': 'Collection not found',
+  'request_not_found_in_collection': 'Request not found in collection',
+  'request_saved_successfully': 'Request saved successfully',
   'tree_view_coming_soon': 'Tree view coming soon',
   'enable_server_certificate_verification':
       'Enable server certificate verification',
@@ -1008,6 +1015,13 @@ const _zh = {
 
   'discard': '放弃',
   'save_and_close': '保存并关闭',
+  'save_case': '保存用例',
+  'case': '用例',
+  'case_saved_successfully': '用例保存成功',
+  'case_updated_successfully': '用例更新成功',
+  'collection_not_found': '未找到集合',
+  'request_not_found_in_collection': '集合中未找到该请求',
+  'request_saved_successfully': '请求保存成功',
   'tree_view_coming_soon': '树状视图即将推出',
   'key_0': '导出',
   'crt': '导出根公钥证书 (.crt)',
