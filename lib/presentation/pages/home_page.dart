@@ -1078,7 +1078,7 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
     return MultiSplitViewTheme(
       data: MultiSplitViewThemeData(
         dividerThickness: 1,
-        dividerHandleBuffer: 10,
+        dividerHandleBuffer: 0,
         dividerPainter: DividerPainters.background(
           color: Theme.of(context).dividerColor,
           highlightedColor: Theme.of(context).colorScheme.primary,
