@@ -62,6 +62,13 @@ class _DraftParamRow {
   }
 }
 
+class _CaseLocation {
+  final CollectionRequest parent;
+  final CollectionRequestCase caseNode;
+
+  _CaseLocation({required this.parent, required this.caseNode});
+}
+
 // removed _CodeEditorTextField
 
 class _RequestPaneState extends ConsumerState<RequestPane>
@@ -232,6 +239,323 @@ class _RequestPaneState extends ConsumerState<RequestPane>
   Future<void> _showSaveDialog(
       BuildContext context, HttpRequestModel request) async {
     await saveRequest(context, ref, request);
+  }
+
+  CollectionRequest? _findRequestNode(
+      CollectionModel collection, String requestId) {
+    CollectionRequest? found;
+
+    void visit(List<CollectionNode> nodes) {
+      for (final node in nodes) {
+        if (found != null) return;
+        if (node is CollectionFolder) {
+          visit(node.children);
+          continue;
+        }
+        if (node is CollectionRequest && node.id == requestId) {
+          found = node;
+          return;
+        }
+      }
+    }
+
+    visit(collection.children);
+    return found;
+  }
+
+  _CaseLocation? _findCaseLocation(
+      CollectionModel collection, String caseId) {
+    _CaseLocation? found;
+
+    void visit(List<CollectionNode> nodes) {
+      for (final node in nodes) {
+        if (found != null) return;
+        if (node is CollectionFolder) {
+          visit(node.children);
+          continue;
+        }
+        if (node is CollectionRequest) {
+          for (final c in node.cases) {
+            if (c.id == caseId) {
+              found = _CaseLocation(parent: node, caseNode: c);
+              return;
+            }
+          }
+        }
+      }
+    }
+
+    visit(collection.children);
+    return found;
+  }
+
+  CollectionModel _addCaseToRequest(
+    CollectionModel collection, {
+    required String parentRequestId,
+    required CollectionRequestCase newCase,
+  }) {
+    List<CollectionNode> visit(List<CollectionNode> nodes) {
+      return nodes.map((node) {
+        if (node is CollectionFolder) {
+          return node.copyWith(children: visit(node.children));
+        }
+        if (node is CollectionRequest && node.id == parentRequestId) {
+          return node.copyWith(cases: [...node.cases, newCase]);
+        }
+        return node;
+      }).toList();
+    }
+
+    return collection.copyWith(children: visit(collection.children));
+  }
+
+  CollectionModel _updateCaseInRequest(
+    CollectionModel collection, {
+    required String parentRequestId,
+    required CollectionRequestCase updatedCase,
+  }) {
+    List<CollectionNode> visit(List<CollectionNode> nodes) {
+      return nodes.map((node) {
+        if (node is CollectionFolder) {
+          return node.copyWith(children: visit(node.children));
+        }
+        if (node is CollectionRequest && node.id == parentRequestId) {
+          return node.copyWith(
+              cases: node.cases
+                  .map((c) => c.id == updatedCase.id ? updatedCase : c)
+                  .toList());
+        }
+        return node;
+      }).toList();
+    }
+
+    return collection.copyWith(children: visit(collection.children));
+  }
+
+  Future<String?> _showSaveCaseNameDialog(BuildContext context) async {
+    final t = ref.read(translationsProvider);
+    final controller = TextEditingController();
+    final result = await AppOverlayDialogs.showModalLike<String>(
+      context: context,
+      barrierLabel: t['save_case'] ?? 'Save Case',
+      builder: (context) => Dialog(
+        child: SizedBox(
+          width: 400,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                      bottom:
+                          BorderSide(color: Theme.of(context).dividerColor)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(t['save_case'] ?? 'Save Case',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 14)),
+                    InkWell(
+                      onTap: () => Navigator.pop(context),
+                      child: const FaIcon(FontAwesomeIcons.xmark,
+                          size: 13, color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(t['name'] ?? 'Name',
+                        style: TextStyle(fontSize: 12, color: Colors.grey)),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: controller,
+                      autofocus: true,
+                      style: const TextStyle(fontSize: 12),
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Theme.of(context).scaffoldBackgroundColor,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6.0),
+                          borderSide:
+                              BorderSide(color: Theme.of(context).dividerColor),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6.0),
+                          borderSide:
+                              BorderSide(color: Theme.of(context).dividerColor),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(6.0),
+                          borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.secondary),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 12),
+                        isDense: true,
+                      ),
+                      onSubmitted: (val) {
+                        final name = val.trim();
+                        if (name.isEmpty) return;
+                        Navigator.pop(context, name);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).scaffoldBackgroundColor,
+                  borderRadius:
+                      const BorderRadius.vertical(bottom: Radius.circular(8)),
+                  border: Border(
+                      top: BorderSide(color: Theme.of(context).dividerColor)),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        minimumSize: Size.zero,
+                      ),
+                      child: Text(t['cancel'] ?? 'Cancel',
+                          style: const TextStyle(fontSize: 12)),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton(
+                      onPressed: () {
+                        final name = controller.text.trim();
+                        if (name.isEmpty) return;
+                        Navigator.pop(context, name);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        minimumSize: Size.zero,
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(6.0)),
+                      ),
+                      child: Text(t['save'] ?? 'Save',
+                          style: const TextStyle(
+                              fontSize: 12, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    return result?.trim().isEmpty ?? true ? null : result?.trim();
+  }
+
+  Future<void> _saveOrUpdateCase(
+      BuildContext context, HttpRequestModel request) async {
+    HttpRequestModel currentRequest = request;
+    if (currentRequest.collectionId == null) {
+      final saved = await saveRequest(context, ref, currentRequest,
+          showSuccessMessage: false);
+      if (saved == null) return;
+      currentRequest = saved;
+    }
+
+    final collectionId = currentRequest.collectionId;
+    if (collectionId == null) return;
+
+    final t = ref.read(translationsProvider);
+    final collections = ref.read(collectionsProvider);
+    final collection =
+        collections.where((c) => c.id == collectionId).firstOrNull;
+    if (collection == null) {
+      if (context.mounted) {
+        ToastUtils.showInfo(
+            context, t['collection_not_found'] ?? 'Collection not found');
+      }
+      return;
+    }
+
+    final caseLocation = _findCaseLocation(collection, currentRequest.id);
+    if (caseLocation != null) {
+      final updatedRequest = currentRequest.copyWith(
+        id: caseLocation.caseNode.id,
+        name: caseLocation.caseNode.name,
+      );
+      final updatedCase = caseLocation.caseNode.copyWith(
+        request: updatedRequest,
+      );
+      final updatedCollection = _updateCaseInRequest(
+        collection,
+        parentRequestId: caseLocation.parent.id,
+        updatedCase: updatedCase,
+      );
+      await ref
+          .read(collectionsProvider.notifier)
+          .updateCollection(updatedCollection);
+      ref.read(requestProvider.notifier).markSaved(updatedRequest);
+      if (context.mounted) {
+        ToastUtils.showInfo(context,
+            t['case_updated_successfully'] ?? 'Case updated successfully');
+      }
+      return;
+    }
+
+    final parentRequest = _findRequestNode(collection, currentRequest.id);
+    if (parentRequest == null) {
+      if (context.mounted) {
+        ToastUtils.showInfo(
+            context,
+            t['request_not_found_in_collection'] ??
+                'Request not found in collection');
+      }
+      return;
+    }
+
+    final caseName = await _showSaveCaseNameDialog(context);
+    if (caseName == null || !context.mounted) return;
+
+    final caseId = DateTime.now().millisecondsSinceEpoch.toString();
+    final caseRequest = currentRequest.copyWith(
+      id: caseId,
+      name: caseName,
+      collectionId: collection.id,
+      folderId: currentRequest.folderId,
+    );
+    final newCase = CollectionRequestCase(
+      id: caseId,
+      name: caseName,
+      request: caseRequest,
+    );
+    final updatedCollection = _addCaseToRequest(
+      collection,
+      parentRequestId: parentRequest.id,
+      newCase: newCase,
+    );
+
+    await ref
+        .read(collectionsProvider.notifier)
+        .updateCollection(updatedCollection);
+    if (context.mounted) {
+      ToastUtils.showInfo(
+          context, t['case_saved_successfully'] ?? 'Case saved successfully');
+    }
   }
 
   @override
@@ -437,19 +761,45 @@ class _RequestPaneState extends ConsumerState<RequestPane>
                       ),
                       SizedBox(
                         height: 28,
-                        child: OutlinedButton.icon(
-                          onPressed: () => _showSaveDialog(context, request),
-                          icon: const FaIcon(FontAwesomeIcons.floppyDisk,
-                              size: 14),
-                          label: Text(t['save'] ?? 'Save',
-                              style: const TextStyle(fontSize: 12)),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor:
-                                Theme.of(context).textTheme.bodyMedium!.color,
-                            side: BorderSide(
-                                color: Theme.of(context).dividerColor),
-                            padding: const EdgeInsets.symmetric(horizontal: 12),
-                          ),
+                        child: Row(
+                          children: [
+                            OutlinedButton.icon(
+                              onPressed: () => _showSaveDialog(context, request),
+                              icon: const FaIcon(FontAwesomeIcons.floppyDisk,
+                                  size: 14),
+                              label: Text(t['save'] ?? 'Save',
+                                  style: const TextStyle(fontSize: 12)),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium!
+                                    .color,
+                                side: BorderSide(
+                                    color: Theme.of(context).dividerColor),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            OutlinedButton.icon(
+                              onPressed: () =>
+                                  _saveOrUpdateCase(context, request),
+                              icon: const FaIcon(FontAwesomeIcons.bookmark,
+                                  size: 14),
+                              label: Text(t['save_case'] ?? 'Save Case',
+                                  style: const TextStyle(fontSize: 12)),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium!
+                                    .color,
+                                side: BorderSide(
+                                    color: Theme.of(context).dividerColor),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 12),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],

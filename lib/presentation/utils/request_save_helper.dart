@@ -6,7 +6,53 @@ import '../../domain/models/collection_model.dart';
 import '../../domain/models/http_request_model.dart';
 import '../providers/collection_provider.dart';
 import '../providers/request_provider.dart';
+import '../providers/settings_provider.dart';
 import '../widgets/save_request_dialog.dart';
+
+CollectionModel? _updateRequestOrCaseInCollection(
+  CollectionModel collection,
+  HttpRequestModel request,
+) {
+  bool didUpdate = false;
+
+  List<CollectionNode> visitNodes(List<CollectionNode> nodes) {
+    return nodes.map((node) {
+      if (node is CollectionFolder) {
+        return node.copyWith(children: visitNodes(node.children));
+      }
+      if (node is CollectionRequest) {
+        bool updatedHere = false;
+        if (node.id == request.id) {
+          didUpdate = true;
+          updatedHere = true;
+          return node.copyWith(
+            name: request.name,
+            request: request,
+          );
+        }
+
+        final updatedCases = node.cases.map((c) {
+          if (c.id != request.id) return c;
+          didUpdate = true;
+          updatedHere = true;
+          return c.copyWith(
+            name: request.name,
+            request: request,
+          );
+        }).toList();
+
+        if (updatedHere) {
+          return node.copyWith(cases: updatedCases);
+        }
+      }
+      return node;
+    }).toList();
+  }
+
+  final updatedChildren = visitNodes(collection.children);
+  if (!didUpdate) return null;
+  return collection.copyWith(children: updatedChildren);
+}
 
 CollectionModel _addNodeToCollection(
   CollectionModel collection,
@@ -72,23 +118,26 @@ Future<HttpRequestModel?> saveRequest(
 
     if (targetCollection == null) {
       if (context.mounted) {
-        ToastUtils.showInfo(context, 'Collection not found');
+        final t = ref.read(translationsProvider);
+        ToastUtils.showInfo(
+            context, t['collection_not_found'] ?? 'Collection not found');
       }
       return null;
     }
 
     savedRequest = request.copyWith();
-    final updatedNode = CollectionRequest(
-      id: request.id,
-      name: request.name,
-      request: savedRequest,
-    );
-    final updatedCollection = _addNodeToCollection(
-      targetCollection,
-      updatedNode,
-      request.id,
-      request.folderId,
-    );
+    final updatedCollection =
+        _updateRequestOrCaseInCollection(targetCollection, savedRequest) ??
+            _addNodeToCollection(
+              targetCollection,
+              CollectionRequest(
+                id: request.id,
+                name: request.name,
+                request: savedRequest,
+              ),
+              request.id,
+              request.folderId,
+            );
 
     await ref
         .read(collectionsProvider.notifier)
@@ -110,7 +159,9 @@ Future<HttpRequestModel?> saveRequest(
 
   ref.read(requestProvider.notifier).markSaved(savedRequest);
   if (showSuccessMessage && context.mounted) {
-    ToastUtils.showInfo(context, 'Request saved successfully');
+    final t = ref.read(translationsProvider);
+    ToastUtils.showInfo(context,
+        t['request_saved_successfully'] ?? 'Request saved successfully');
   }
 
   return savedRequest;
