@@ -37,6 +37,7 @@ class _ImportDialogState extends ConsumerState<ImportDialog> {
     try {
       final workspaceId = ref.read(activeWorkspaceProvider).id;
       CollectionModel? collection;
+      bool isSwagger = false;
 
       if (content.contains('"info"') && content.contains('"item"')) {
         collection = ImportHelper.parsePostLensCollection(content, workspaceId);
@@ -44,13 +45,17 @@ class _ImportDialogState extends ConsumerState<ImportDialog> {
           content.contains('"openapi"') ||
           content.contains('swagger:') ||
           content.contains('openapi:')) {
+        isSwagger = true;
         collection = ImportHelper.parseSwagger(content, workspaceId);
       }
 
       if (collection != null) {
-        ref.read(collectionsProvider.notifier).addCollection(collection);
+        if (isSwagger && collection.children.isEmpty) {
+          throw const FormatException('No endpoints found in the API spec');
+        }
+        await ref.read(collectionsProvider.notifier).addCollection(collection);
         if (mounted) {
-          ToastUtils.showInfo(context, 'Import successful');
+          ToastUtils.showSuccess(context, 'Import successful');
           Navigator.of(context).pop();
         }
       } else {
@@ -59,7 +64,7 @@ class _ImportDialogState extends ConsumerState<ImportDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showInfo(context, 'Import failed: $e');
+        ToastUtils.showError(context, 'Import failed: $e');
       }
     }
   }
@@ -72,7 +77,7 @@ class _ImportDialogState extends ConsumerState<ImportDialog> {
       await _processContent(content);
     } catch (e) {
       if (mounted) {
-        ToastUtils.showInfo(context, 'Failed to read file: $e');
+        ToastUtils.showError(context, 'Failed to read file: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -133,7 +138,7 @@ class _ImportDialogState extends ConsumerState<ImportDialog> {
       }
     } catch (e) {
       if (mounted) {
-        ToastUtils.showInfo(context, 'Import failed: $e');
+        ToastUtils.showError(context, 'Import failed: $e');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);

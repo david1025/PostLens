@@ -14,10 +14,12 @@ class CollectionNotifier extends StateNotifier<List<CollectionModel>> {
       final dbHelper = DatabaseHelper.instance;
       final data = await dbHelper.getCollections();
       if (data.isNotEmpty) {
-        state = data
+        final loaded = data
             .map((e) =>
                 CollectionModel.fromJson(jsonDecode(e['data'] as String)))
             .toList();
+        final loadedIds = loaded.map((c) => c.id).toSet();
+        state = [...loaded, ...state.where((c) => !loadedIds.contains(c.id))];
       }
     } catch (e) {
       
@@ -32,8 +34,8 @@ class CollectionNotifier extends StateNotifier<List<CollectionModel>> {
           collection.name,
           jsonEncode(collection.toJson()));
       state = [...state, collection];
-    } catch (e) {
-      
+    } catch (e, st) {
+      Error.throwWithStackTrace(e, st);
     }
   }
 
@@ -48,8 +50,8 @@ class CollectionNotifier extends StateNotifier<List<CollectionModel>> {
         for (final c in state)
           if (c.id == collection.id) collection else c
       ];
-    } catch (e) {
-      
+    } catch (e, st) {
+      Error.throwWithStackTrace(e, st);
     }
   }
 
@@ -57,8 +59,8 @@ class CollectionNotifier extends StateNotifier<List<CollectionModel>> {
     try {
       await DatabaseHelper.instance.deleteCollection(id);
       state = state.where((c) => c.id != id).toList();
-    } catch (e) {
-      
+    } catch (e, st) {
+      Error.throwWithStackTrace(e, st);
     }
   }
 
@@ -73,10 +75,11 @@ class CollectionNotifier extends StateNotifier<List<CollectionModel>> {
             jsonEncode(collection.toJson()));
       } catch (_) {
         await DatabaseHelper.instance.updateCollection(
-            collection.id,
-            collection.workspaceId,
-            collection.name,
-            jsonEncode(collection.toJson()));
+          collection.id,
+          collection.workspaceId,
+          collection.name,
+          jsonEncode(collection.toJson()),
+        );
       }
     }
     state = collections;

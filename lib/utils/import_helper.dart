@@ -13,26 +13,26 @@ class ImportHelper {
 
   static CollectionModel? parsePostLensCollection(
       String jsonStr, String workspaceId) {
-    try {
-      final data = jsonDecode(jsonStr);
-      if (data['info'] != null && data['item'] != null) {
-        final collectionName =
-            data['info']['name'] ?? 'Imported PostLens Collection';
-        final items = data['item'] as List;
+    final data = jsonDecode(jsonStr);
+    if (data is! Map<String, dynamic>) return null;
+    if (data['info'] == null || data['item'] == null) return null;
 
-        final children = _parsePostLensItems(items);
+    final info = data['info'];
+    final collectionName = (info is Map ? info['name'] : null) ??
+        'Imported PostLens Collection';
 
-        return CollectionModel(
-          id: generateId(),
-          workspaceId: workspaceId,
-          name: collectionName,
-          children: children,
-        );
-      }
-    } catch (e) {
-      
+    final items = data['item'];
+    if (items is! List) {
+      throw const FormatException('Invalid PostLens collection: item must be a list');
     }
-    return null;
+
+    final children = _parsePostLensItems(items);
+    return CollectionModel(
+      id: generateId(),
+      workspaceId: workspaceId,
+      name: collectionName.toString(),
+      children: children,
+    );
   }
 
   static List<CollectionNode> _parsePostLensItems(List items) {
@@ -164,220 +164,227 @@ class ImportHelper {
   }
 
   static CollectionModel? parseSwagger(String jsonStr, String workspaceId) {
-    try {
-      final data = jsonDecode(jsonStr);
-      if (data['openapi'] != null || data['swagger'] != null) {
-        final info = data['info'] ?? {};
-        final collectionName = info['title'] ?? 'Imported Swagger/OpenAPI';
-        final paths = data['paths'] ?? {};
+    final data = jsonDecode(jsonStr);
+    if (data is! Map<String, dynamic>) return null;
+    if (data['openapi'] == null && data['swagger'] == null) return null;
 
-        List<CollectionNode> children = [];
-        Map<String, List<CollectionNode>> folderMap = {};
+    final info = data['info'];
+    final collectionName =
+        (info is Map ? info['title'] : null) ?? 'Imported Swagger/OpenAPI';
 
-        String baseUrl = '';
-        if (data['servers'] != null && (data['servers'] as List).isNotEmpty) {
-          baseUrl = data['servers'][0]['url'] ?? '';
-        } else if (data['host'] != null) {
-          final scheme =
-              (data['schemes'] != null && (data['schemes'] as List).isNotEmpty)
-                  ? data['schemes'][0]
-                  : 'http';
-          baseUrl = '$scheme://${data['host']}${data['basePath'] ?? ''}';
+    final paths = data['paths'];
+    if (paths is! Map || paths.isEmpty) {
+      throw const FormatException('No endpoints found: paths is empty');
+    }
+
+    List<CollectionNode> children = [];
+    Map<String, List<CollectionNode>> folderMap = {};
+
+    String baseUrl = '';
+    final servers = data['servers'];
+    if (servers is List && servers.isNotEmpty) {
+      final s0 = servers.first;
+      if (s0 is Map) baseUrl = (s0['url'] ?? '').toString();
+    } else if (data['host'] != null) {
+      final schemes = data['schemes'];
+      final scheme =
+          (schemes is List && schemes.isNotEmpty) ? schemes.first : 'http';
+      baseUrl = '$scheme://${data['host']}${data['basePath'] ?? ''}';
+    }
+
+    paths.forEach((path, methods) {
+      if (methods is! Map) return;
+
+      List<Map<String, dynamic>> pathParamsList = [];
+      final pathParams = methods['parameters'];
+      if (pathParams is List) {
+        for (final p in pathParams) {
+          if (p is Map<String, dynamic>) pathParamsList.add(p);
+        }
+      }
+
+      methods.forEach((method, details) {
+        if (details is! Map) return;
+        if (![
+          'get',
+          'post',
+          'put',
+          'delete',
+          'patch',
+          'options',
+          'head'
+        ].contains(method.toString().toLowerCase())) {
+          return;
         }
 
-        paths.forEach((path, methods) {
-          if (methods is Map) {
-            // Collect path-level parameters
-            List<Map<String, dynamic>> pathParamsList = [];
-            if (methods['parameters'] is List) {
-              for (var p in methods['parameters']) {
-                if (p is Map<String, dynamic>) pathParamsList.add(p);
+        final reqName = details['summary'] ?? '$method $path';
+
+        List<Map<String, String>> params = [];
+        List<Map<String, String>> headers = [];
+        String body = '';
+        String bodyType = 'none';
+        String rawBodyType = 'JSON';
+
+        List<Map<String, dynamic>> allParams = List.from(pathParamsList);
+        final methodParams = details['parameters'];
+        if (methodParams is List) {
+          for (final p in methodParams) {
+            if (p is Map<String, dynamic>) allParams.add(p);
+          }
+        }
+
+        for (final p in allParams) {
+          Map<String, dynamic> param = p;
+          if (param.containsKey('\$ref')) {
+            final resolved = _resolveRef(param['\$ref'], data);
+            if (resolved is Map<String, dynamic>) param = resolved;
+          }
+
+          final name = param['name']?.toString() ?? '';
+          final inLocation = param['in']?.toString() ?? '';
+          if (name.isEmpty) continue;
+
+          if (inLocation == 'query') {
+            params.add({'key': name, 'value': '', 'enabled': 'true'});
+          } else if (inLocation == 'header') {
+            headers.add({'key': name, 'value': '', 'enabled': 'true'});
+          } else if (inLocation == 'body') {
+            bodyType = 'raw';
+            rawBodyType = 'JSON';
+            headers.add({
+              'key': 'Content-Type',
+              'value': 'application/json',
+              'enabled': 'true'
+            });
+            final schema = param['schema'];
+            if (schema is Map<String, dynamic>) {
+              final sample = _generateSampleFromSchema(schema, data);
+              if (sample != null) {
+                body = const JsonEncoder.withIndent('  ').convert(sample);
               }
             }
+          }
+        }
 
-            methods.forEach((method, details) {
-              if (['get', 'post', 'put', 'delete', 'patch', 'options', 'head']
-                  .contains(method.toLowerCase())) {
-                final reqName = details['summary'] ?? '$method $path';
+        if (details['requestBody'] != null) {
+          Map<String, dynamic> reqBody = (details['requestBody'] is Map<String, dynamic>)
+              ? details['requestBody'] as Map<String, dynamic>
+              : {};
+          if (reqBody.containsKey('\$ref')) {
+            final resolved = _resolveRef(reqBody['\$ref'], data);
+            if (resolved is Map<String, dynamic>) reqBody = resolved;
+          }
 
-                List<Map<String, String>> params = [];
-                List<Map<String, String>> headers = [];
-                String body = '';
-                String bodyType = 'none';
-                String rawBodyType = 'JSON';
+          if (reqBody['content'] is Map) {
+            final content = reqBody['content'] as Map;
+            if (content.containsKey('application/json')) {
+              bodyType = 'raw';
+              rawBodyType = 'JSON';
+              headers.add({
+                'key': 'Content-Type',
+                'value': 'application/json',
+                'enabled': 'true'
+              });
 
-                // Merge path-level and method-level parameters
-                List<Map<String, dynamic>> allParams =
-                    List.from(pathParamsList);
-                if (details['parameters'] is List) {
-                  for (var p in details['parameters']) {
-                    if (p is Map<String, dynamic>) allParams.add(p);
-                  }
-                }
-
-                for (var p in allParams) {
-                  // Resolve ref if it's a parameter ref
-                  Map<String, dynamic> param = p;
-                  if (param.containsKey('\$ref')) {
-                    final resolved = _resolveRef(param['\$ref'], data);
-                    if (resolved is Map<String, dynamic>) param = resolved;
-                  }
-
-                  final name = param['name']?.toString() ?? '';
-                  final inLocation = param['in']?.toString() ?? '';
-                  if (name.isEmpty) continue;
-
-                  if (inLocation == 'query') {
-                    params.add({'key': name, 'value': '', 'enabled': 'true'});
-                  } else if (inLocation == 'header') {
-                    headers.add({'key': name, 'value': '', 'enabled': 'true'});
-                  } else if (inLocation == 'body') {
-                    // Swagger 2.0 body parameter
-                    bodyType = 'raw';
-                    rawBodyType = 'JSON';
-                    headers.add({
-                      'key': 'Content-Type',
-                      'value': 'application/json',
-                      'enabled': 'true'
-                    });
-                    final schema = param['schema'];
-                    if (schema is Map<String, dynamic>) {
-                      final sample = _generateSampleFromSchema(schema, data);
-                      if (sample != null) {
-                        body =
-                            const JsonEncoder.withIndent('  ').convert(sample);
-                      }
-                    }
-                  }
-                }
-
-                // OpenAPI 3.0 requestBody
-                if (details['requestBody'] != null) {
-                  Map<String, dynamic> reqBody = details['requestBody'];
-                  if (reqBody.containsKey('\$ref')) {
-                    final resolved = _resolveRef(reqBody['\$ref'], data);
-                    if (resolved is Map<String, dynamic>) reqBody = resolved;
-                  }
-
-                  if (reqBody['content'] is Map) {
-                    final content = reqBody['content'] as Map;
-                    if (content.containsKey('application/json')) {
-                      bodyType = 'raw';
-                      rawBodyType = 'JSON';
-                      headers.add({
-                        'key': 'Content-Type',
-                        'value': 'application/json',
-                        'enabled': 'true'
-                      });
-
-                      final schema = content['application/json']['schema'];
-                      if (schema is Map<String, dynamic>) {
-                        final sample = _generateSampleFromSchema(schema, data);
-                        if (sample != null) {
-                          body = const JsonEncoder.withIndent('  ')
-                              .convert(sample);
-                        }
-                      }
-                    } else if (content
-                        .containsKey('application/x-www-form-urlencoded')) {
-                      bodyType = 'urlencoded';
-                      headers.add({
-                        'key': 'Content-Type',
-                        'value': 'application/x-www-form-urlencoded',
-                        'enabled': 'true'
-                      });
-                    } else if (content.containsKey('multipart/form-data')) {
-                      bodyType = 'formdata';
-                      headers.add({
-                        'key': 'Content-Type',
-                        'value': 'multipart/form-data',
-                        'enabled': 'true'
-                      });
-                    }
-                  }
-                }
-
-                // If no Content-Type was set but bodyType is raw/JSON, ensure it
-                bool hasContentType = headers
-                    .any((h) => h['key']?.toLowerCase() == 'content-type');
-                if (bodyType == 'raw' &&
-                    rawBodyType == 'JSON' &&
-                    !hasContentType) {
-                  headers.add({
-                    'key': 'Content-Type',
-                    'value': 'application/json',
-                    'enabled': 'true'
-                  });
-                }
-
-                final requestNode = CollectionRequest(
-                  id: generateId('reqNode'),
-                  name: reqName,
-                  request: HttpRequestModel(
-                    id: generateId('req'),
-                    name: reqName,
-                    method: method.toUpperCase(),
-                    protocol: 'http',
-                    url: baseUrl + path,
-                    params: params,
-                    headers: headers.isEmpty
-                        ? [
-                            {
-                              'key': 'Cache-Control',
-                              'value': 'no-cache',
-                              'enabled': 'true'
-                            },
-                            {
-                              'key': 'Accept',
-                              'value': '*/*',
-                              'enabled': 'true'
-                            },
-                            {
-                              'key': 'Connection',
-                              'value': 'keep-alive',
-                              'enabled': 'true'
-                            },
-                          ]
-                        : headers,
-                    bodyType: bodyType,
-                    rawBodyType: rawBodyType,
-                    body: body,
-                  ),
-                );
-
-                List tags = details['tags'] ?? [];
-                if (tags.isNotEmpty) {
-                  String tag = tags.first.toString();
-                  folderMap.putIfAbsent(tag, () => []).add(requestNode);
-                } else {
-                  children.add(requestNode);
+              final schema = (content['application/json'] is Map)
+                  ? (content['application/json'] as Map)['schema']
+                  : null;
+              if (schema is Map<String, dynamic>) {
+                final sample = _generateSampleFromSchema(schema, data);
+                if (sample != null) {
+                  body =
+                      const JsonEncoder.withIndent('  ').convert(sample);
                 }
               }
-            });
+            } else if (content.containsKey('application/x-www-form-urlencoded')) {
+              bodyType = 'urlencoded';
+              headers.add({
+                'key': 'Content-Type',
+                'value': 'application/x-www-form-urlencoded',
+                'enabled': 'true'
+              });
+            } else if (content.containsKey('multipart/form-data')) {
+              bodyType = 'formdata';
+              headers.add({
+                'key': 'Content-Type',
+                'value': 'multipart/form-data',
+                'enabled': 'true'
+              });
+            }
           }
-        });
+        }
 
-        folderMap.forEach((tagName, requests) {
-          children.insert(
-            0,
-            CollectionFolder(
-              id: generateId('folder'),
-              name: tagName,
-              children: requests,
-            ),
-          );
-        });
+        final hasContentType =
+            headers.any((h) => h['key']?.toLowerCase() == 'content-type');
+        if (bodyType == 'raw' && rawBodyType == 'JSON' && !hasContentType) {
+          headers.add({
+            'key': 'Content-Type',
+            'value': 'application/json',
+            'enabled': 'true'
+          });
+        }
 
-        return CollectionModel(
-          id: generateId('coll'),
-          workspaceId: workspaceId,
-          name: collectionName,
-          children: children,
+        final requestNode = CollectionRequest(
+          id: generateId('reqNode'),
+          name: reqName.toString(),
+          request: HttpRequestModel(
+            id: generateId('req'),
+            name: reqName.toString(),
+            method: method.toString().toUpperCase(),
+            protocol: 'http',
+            url: baseUrl + path.toString(),
+            params: params,
+            headers: headers.isEmpty
+                ? [
+                    {
+                      'key': 'Cache-Control',
+                      'value': 'no-cache',
+                      'enabled': 'true'
+                    },
+                    {'key': 'Accept', 'value': '*/*', 'enabled': 'true'},
+                    {
+                      'key': 'Connection',
+                      'value': 'keep-alive',
+                      'enabled': 'true'
+                    },
+                  ]
+                : headers,
+            bodyType: bodyType,
+            rawBodyType: rawBodyType,
+            body: body,
+          ),
         );
-      }
-    } catch (e) {
-      
+
+        final tags = details['tags'];
+        if (tags is List && tags.isNotEmpty) {
+          final tag = tags.first.toString();
+          folderMap.putIfAbsent(tag, () => []).add(requestNode);
+        } else {
+          children.add(requestNode);
+        }
+      });
+    });
+
+    folderMap.forEach((tagName, requests) {
+      children.insert(
+        0,
+        CollectionFolder(
+          id: generateId('folder'),
+          name: tagName,
+          children: requests,
+        ),
+      );
+    });
+
+    if (children.isEmpty) {
+      throw const FormatException('No endpoints found: parsed requests is empty');
     }
-    return null;
+
+    return CollectionModel(
+      id: generateId('coll'),
+      workspaceId: workspaceId,
+      name: collectionName.toString(),
+      children: children,
+    );
   }
 }
