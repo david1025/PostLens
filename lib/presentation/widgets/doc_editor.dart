@@ -38,6 +38,9 @@ class DocEditor extends StatefulWidget {
 class _DocEditorState extends State<DocEditor> {
   static const _debounceDuration = Duration(milliseconds: 350);
   static const _contentFontSize = 12.0;
+  static const _toolbarButtonSize = 26.0;
+  static const _toolbarIconSize = 14.0;
+  static const _toolbarReservedHeight = 56.0;
 
   DocEditorMode _mode = DocEditorMode.richText;
   MarkdownViewMode _markdownViewMode = MarkdownViewMode.edit;
@@ -267,40 +270,11 @@ class _DocEditorState extends State<DocEditor> {
                         customStyles: customStyles,
                       ),
                     )
-              : Column(
+              : Stack(
                   children: [
-                    if (showToolbar) ...[
-                      DefaultTextStyle.merge(
-                        style: const TextStyle(fontSize: _contentFontSize),
-                        child: MouseRegion(
-                          onEnter: (_) => setState(() => _toolbarHovering = true),
-                          onExit: (_) =>
-                              setState(() => _toolbarHovering = false),
-                          child: QuillSimpleToolbar(
-                            controller: _quillController,
-                            config: const QuillSimpleToolbarConfig(
-                              toolbarSize: 32,
-                              iconTheme: QuillIconTheme(
-                                iconButtonUnselectedData: IconButtonData(
-                                  iconSize: 18,
-                                  padding: EdgeInsets.zero,
-                                  constraints: BoxConstraints.tightFor(
-                                      width: 32, height: 32),
-                                ),
-                                iconButtonSelectedData: IconButtonData(
-                                  iconSize: 18,
-                                  padding: EdgeInsets.zero,
-                                  constraints: BoxConstraints.tightFor(
-                                      width: 32, height: 32),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                      Divider(height: 1, color: Theme.of(context).dividerColor),
-                    ],
-                    Expanded(
+                    Padding(
+                      padding:
+                          const EdgeInsets.only(top: _toolbarReservedHeight),
                       child: QuillEditor.basic(
                         controller: _quillController,
                         focusNode: _richFocusNode,
@@ -310,6 +284,81 @@ class _DocEditorState extends State<DocEditor> {
                           padding: const EdgeInsets.all(12),
                           scrollable: true,
                           customStyles: customStyles,
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      top: 0,
+                      height: _toolbarReservedHeight,
+                      child: IgnorePointer(
+                        ignoring: !showToolbar,
+                        child: AnimatedOpacity(
+                          opacity: showToolbar ? 1 : 0,
+                          duration: const Duration(milliseconds: 140),
+                          child: Container(
+                            color: Theme.of(context).colorScheme.surface,
+                            alignment: Alignment.topLeft,
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                DefaultTextStyle.merge(
+                                  style: const TextStyle(
+                                      fontSize: _contentFontSize),
+                                  child: MouseRegion(
+                                    onEnter: (_) => setState(
+                                        () => _toolbarHovering = true),
+                                    onExit: (_) => setState(
+                                        () => _toolbarHovering = false),
+                                    child: QuillSimpleToolbar(
+                                      controller: _quillController,
+                                      config: const QuillSimpleToolbarConfig(
+                                        toolbarSize: _toolbarButtonSize,
+                                        toolbarSectionSpacing: 2,
+                                        toolbarRunSpacing: 2,
+                                        showDividers: false,
+                                        showFontFamily: false,
+                                        showFontSize: false,
+                                        showHeaderStyle: false,
+                                        showSearchButton: false,
+                                        iconTheme: QuillIconTheme(
+                                          iconButtonUnselectedData:
+                                              IconButtonData(
+                                            iconSize: _toolbarIconSize,
+                                            padding: EdgeInsets.zero,
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            constraints:
+                                                BoxConstraints.tightFor(
+                                              width: _toolbarButtonSize,
+                                              height: _toolbarButtonSize,
+                                            ),
+                                          ),
+                                          iconButtonSelectedData:
+                                              IconButtonData(
+                                            iconSize: _toolbarIconSize,
+                                            padding: EdgeInsets.zero,
+                                            visualDensity:
+                                                VisualDensity.compact,
+                                            constraints:
+                                                BoxConstraints.tightFor(
+                                              width: _toolbarButtonSize,
+                                              height: _toolbarButtonSize,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                Divider(
+                                  height: 1,
+                                  color: Theme.of(context).dividerColor,
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                       ),
                     ),
