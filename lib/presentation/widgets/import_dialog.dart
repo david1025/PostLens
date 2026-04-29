@@ -185,36 +185,43 @@ class _ImportDialogState extends ConsumerState<ImportDialog> {
               child: Row(
                 children: [
                   Expanded(
-                    child: TextField(
-                      controller: _urlController,
-                      onSubmitted: _importFromInput,
-                      style: const TextStyle(fontSize: 12),
-                      decoration: const InputDecoration(
-                        hintText: 'Paste cURL, gRPCurl, Raw text or URL...',
-                        hintStyle: TextStyle(color: Colors.grey, fontSize: 12),
-                        border: InputBorder.none,
-                        contentPadding:
-                            EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                    child: SizedBox(
+                      height: 44,
+                      child: TextField(
+                        controller: _urlController,
+                        onSubmitted: _importFromInput,
+                        style: const TextStyle(fontSize: 12),
+                        decoration: const InputDecoration(
+                          hintText: 'Paste cURL, gRPCurl, Raw text or URL...',
+                          hintStyle:
+                              TextStyle(color: Colors.grey, fontSize: 12),
+                          border: InputBorder.none,
+                          contentPadding: EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                        ),
                       ),
                     ),
                   ),
                   Padding(
                     padding: const EdgeInsets.only(right: 8.0),
-                    child: ElevatedButton(
-                      onPressed: () => _importFromInput(_urlController.text),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Theme.of(context).colorScheme.secondary,
-                        foregroundColor: Colors.white,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        minimumSize: Size.zero,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(4)),
+                    child: SizedBox(
+                      height: 44,
+                      child: ElevatedButton(
+                        onPressed: () => _importFromInput(_urlController.text),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(context).colorScheme.secondary,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 12),
+                          minimumSize: Size.zero,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(4)),
+                        ),
+                        child: Text(t['import'] ?? 'Import',
+                            style: TextStyle(fontSize: 12)),
                       ),
-                      child:
-                          Text(t['import'] ?? 'Import', style: TextStyle(fontSize: 12)),
                     ),
                   ),
                 ],
