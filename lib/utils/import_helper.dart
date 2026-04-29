@@ -81,11 +81,12 @@ class ImportHelper {
           body = req['body']['raw'];
         }
 
+        final reqId = generateId('reqNode');
         nodes.add(CollectionRequest(
-          id: generateId('reqNode'),
+          id: reqId,
           name: item['name'] ?? 'Request',
           request: HttpRequestModel(
-            id: generateId('req'),
+            id: reqId,
             name: item['name'] ?? 'Request',
             method: method,
             protocol: 'http',
@@ -324,11 +325,12 @@ class ImportHelper {
           });
         }
 
+        final reqId = generateId('reqNode');
         final requestNode = CollectionRequest(
-          id: generateId('reqNode'),
+          id: reqId,
           name: reqName.toString(),
           request: HttpRequestModel(
-            id: generateId('req'),
+            id: reqId,
             name: reqName.toString(),
             method: method.toString().toUpperCase(),
             protocol: 'http',

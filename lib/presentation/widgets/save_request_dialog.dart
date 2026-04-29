@@ -92,7 +92,9 @@ class _SaveRequestDialogState extends ConsumerState<SaveRequestDialog> {
     final targetCollection =
         collections.firstWhere((c) => c.id == selectedCollectionId);
 
+    final newNodeId = DateTime.now().millisecondsSinceEpoch.toString();
     final savedRequest = widget.request.copyWith(
+      id: newNodeId,
       name: _nameController.text.trim().isEmpty
           ? 'Untitled Request'
           : _nameController.text.trim(),
@@ -102,10 +104,8 @@ class _SaveRequestDialogState extends ConsumerState<SaveRequestDialog> {
     );
 
     final newNode = CollectionRequest(
-      id: DateTime.now().millisecondsSinceEpoch.toString(),
-      name: _nameController.text.trim().isEmpty
-          ? 'Untitled Request'
-          : _nameController.text.trim(),
+      id: newNodeId,
+      name: savedRequest.name,
       request: savedRequest,
     );
 
