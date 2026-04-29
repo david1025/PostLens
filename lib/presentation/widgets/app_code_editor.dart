@@ -5,6 +5,7 @@ import 'package:post_lens/re_highlight/languages/javascript.dart';
 import 'package:post_lens/re_highlight/languages/graphql.dart';
 import 'package:post_lens/re_highlight/languages/xml.dart';
 import 'package:post_lens/re_highlight/languages/css.dart';
+import 'package:post_lens/re_highlight/languages/markdown.dart';
 import 'package:post_lens/re_highlight/styles/github.dart';
 import 'package:post_lens/re_highlight/styles/atom-one-dark.dart';
 
@@ -192,6 +193,8 @@ class AppCodeEditorState extends State<AppCodeEditor> {
       return {'javascript': CodeHighlightThemeMode(mode: langJavascript)};
     } else if (widget.language == 'graphql') {
       return {'graphql': CodeHighlightThemeMode(mode: langGraphql)};
+    } else if (widget.language == 'markdown') {
+      return {'markdown': CodeHighlightThemeMode(mode: langMarkdown)};
     } else if (widget.language == 'xml' || widget.language == 'html') {
       return {'xml': CodeHighlightThemeMode(mode: langXml)};
     } else if (widget.language == 'css') {
