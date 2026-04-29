@@ -389,125 +389,144 @@ class _MqttPaneState extends ConsumerState<MqttPane>
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         Expanded(
-          child: Row(
-            children: [
-              if (request.folderPath != null &&
-                  request.folderPath!.isNotEmpty) ...[
-                const FaIcon(FontAwesomeIcons.networkWired,
-                    size: 12, color: Colors.blue),
-                const SizedBox(width: 8),
-                for (int i = 0; i < request.folderPath!.length; i++) ...[
-                  Text(
-                    request.folderPath![i],
-                    style: const TextStyle(fontSize: 12, color: Colors.grey),
-                  ),
-                  const Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 4.0),
-                    child:
-                        Icon(Icons.chevron_right, size: 12, color: Colors.grey),
-                  ),
-                ],
-              ],
-              Row(
-                mainAxisSize: MainAxisSize.min,
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxNameWidth = (constraints.maxWidth * 0.28)
+                  .clamp(140.0, 320.0)
+                  .toDouble();
+              return Row(
                 children: [
-                  PopupMenuButton<String>(
-                    tooltip: 'Select Protocol',
-                    position: PopupMenuPosition.under,
-                    padding: EdgeInsets.zero,
-                    color: Theme.of(context).colorScheme.surface,
-                    constraints: const BoxConstraints(),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(4.0),
-                      side: BorderSide(
-                        color: Theme.of(context).dividerColor,
-                        width: 1.0,
+                  if (request.folderPath != null &&
+                      request.folderPath!.isNotEmpty) ...[
+                    const FaIcon(FontAwesomeIcons.networkWired,
+                        size: 12, color: Colors.blue),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        request.folderPath!.join(' › '),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.grey),
                       ),
                     ),
-                    splashRadius: 16,
-                    onSelected: (String value) {
-                      ref.read(requestProvider.notifier).updateProtocol(value);
-                    },
-                    itemBuilder: (context) => <String>[
-                      'http',
-                      'grpc',
-                      'websocket',
-                      'socket.io',
-                      'mqtt',
-                      'tcp',
-                      'udp'
-                    ].map((String value) {
-                      return PopupMenuItem<String>(
-                        value: value,
-                        height: 32,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: Row(
-                          children: [
-                            FaIcon(_getProtocolIcon(value),
-                                size: 14, color: _getProtocolColor(value)),
-                            const SizedBox(width: 8),
-                            Text(value.toUpperCase(),
-                                style: const TextStyle(fontSize: 12)),
-                          ],
+                    const SizedBox(width: 8),
+                  ],
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      PopupMenuButton<String>(
+                        tooltip: 'Select Protocol',
+                        position: PopupMenuPosition.under,
+                        padding: EdgeInsets.zero,
+                        color: Theme.of(context).colorScheme.surface,
+                        constraints: const BoxConstraints(),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(4.0),
+                          side: BorderSide(
+                            color: Theme.of(context).dividerColor,
+                            width: 1.0,
+                          ),
                         ),
-                      );
-                    }).toList(),
-                    child: MouseRegion(
-                      onEnter: (_) => setState(() => _isProtocolHovered = true),
-                      onExit: (_) => setState(() => _isProtocolHovered = false),
-                      cursor: SystemMouseCursors.click,
-                      child: Container(
-                        margin: const EdgeInsets.only(right: 8.0),
-                        padding: const EdgeInsets.all(6.0),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: _isProtocolHovered
-                              ? Colors.grey.withOpacity(0.2)
-                              : Colors.transparent,
-                        ),
-                        child: FaIcon(
-                          _getProtocolIcon(request.protocol),
-                          size: 14,
-                          color: _getProtocolColor(request.protocol),
+                        splashRadius: 16,
+                        onSelected: (String value) {
+                          ref
+                              .read(requestProvider.notifier)
+                              .updateProtocol(value);
+                        },
+                        itemBuilder: (context) => <String>[
+                          'http',
+                          'grpc',
+                          'websocket',
+                          'socket.io',
+                          'mqtt',
+                          'tcp',
+                          'udp'
+                        ].map((String value) {
+                          return PopupMenuItem<String>(
+                            value: value,
+                            height: 32,
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Row(
+                              children: [
+                                FaIcon(_getProtocolIcon(value),
+                                    size: 14, color: _getProtocolColor(value)),
+                                const SizedBox(width: 8),
+                                Text(value.toUpperCase(),
+                                    style: const TextStyle(fontSize: 12)),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                        child: MouseRegion(
+                          onEnter: (_) =>
+                              setState(() => _isProtocolHovered = true),
+                          onExit: (_) =>
+                              setState(() => _isProtocolHovered = false),
+                          cursor: SystemMouseCursors.click,
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 8.0),
+                            padding: const EdgeInsets.all(6.0),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: _isProtocolHovered
+                                  ? Colors.grey.withOpacity(0.2)
+                                  : Colors.transparent,
+                            ),
+                            child: FaIcon(
+                              _getProtocolIcon(request.protocol),
+                              size: 14,
+                              color: _getProtocolColor(request.protocol),
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ),
-                  IntrinsicWidth(
-                    child: TextField(
-                      controller: TextEditingController(text: request.name)
-                        ..selection = TextSelection.collapsed(
-                            offset: request.name.length),
-                      onChanged: (val) =>
-                          ref.read(requestProvider.notifier).updateName(val),
-                      style: const TextStyle(fontSize: 12),
-                      decoration: InputDecoration(
-                        hintText: t['untitled_request'] ?? 'Untitled Request',
-                        filled: true,
-                        fillColor: Theme.of(context).colorScheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(4.0),
-                          borderSide: BorderSide(
-                              color: Colors.grey.withOpacity(0.5), width: 1.0),
+                      ConstrainedBox(
+                        constraints: BoxConstraints(maxWidth: maxNameWidth),
+                        child: TextField(
+                          controller: TextEditingController(text: request.name)
+                            ..selection = TextSelection.collapsed(
+                                offset: request.name.length),
+                          maxLines: 1,
+                          onChanged: (val) => ref
+                              .read(requestProvider.notifier)
+                              .updateName(val),
+                          style: const TextStyle(fontSize: 12),
+                          decoration: InputDecoration(
+                            hintText:
+                                t['untitled_request'] ?? 'Untitled Request',
+                            filled: true,
+                            fillColor: Theme.of(context).colorScheme.surface,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4.0),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  width: 1.0),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4.0),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  width: 1.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(4.0),
+                              borderSide: BorderSide(
+                                  color: Colors.grey.withOpacity(0.5),
+                                  width: 1.0),
+                            ),
+                            isDense: true,
+                            contentPadding:
+                                const EdgeInsets.fromLTRB(8, 7, 8, 7),
+                          ),
                         ),
-                        enabledBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(4.0),
-                          borderSide: BorderSide(
-                              color: Colors.grey.withOpacity(0.5), width: 1.0),
-                        ),
-                        focusedBorder: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(4.0),
-                          borderSide: BorderSide(
-                              color: Colors.grey.withOpacity(0.5), width: 1.0),
-                        ),
-                        isDense: true,
-                        contentPadding: const EdgeInsets.fromLTRB(8, 7, 8, 7),
                       ),
-                    ),
+                    ],
                   ),
                 ],
-              ),
-            ],
+              );
+            },
           ),
         ),
         SizedBox(

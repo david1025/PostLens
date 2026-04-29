@@ -67,24 +67,17 @@ class _CollectionPaneState extends ConsumerState<CollectionPane> {
                 Row(
                   children: [
                     Expanded(
-                      child: Row(
-                        children: [
-                          IntrinsicWidth(
-                            child: TextFormField(
-                              key: ValueKey(name),
-                              initialValue: name,
-                              readOnly: true,
-                              style: const TextStyle(
-                                  fontSize: 14, fontWeight: FontWeight.bold),
-                              decoration: const InputDecoration(
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.symmetric(
-                                    horizontal: 4, vertical: 4),
-                              ),
-                            ),
-                          ),
-                        ],
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 4, vertical: 4),
+                        child: Text(
+                          name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          softWrap: false,
+                          style: const TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 28),
