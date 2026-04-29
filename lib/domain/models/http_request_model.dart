@@ -92,6 +92,7 @@ class HttpRequestModel {
   });
 
   HttpRequestModel copyWith({
+    String? id,
     String? name,
     String? description,
     String? method,
@@ -124,7 +125,7 @@ class HttpRequestModel {
     HttpResponseModel? response,
   }) {
     return HttpRequestModel(
-      id: id,
+      id: id ?? this.id,
       name: name ?? this.name,
       description: description ?? this.description,
       method: method ?? this.method,
