@@ -3174,24 +3174,14 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     final t = ref.watch(translationsProvider);
     return Padding(
       padding: const EdgeInsets.all(16.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            t['doc'] ?? 'Doc',
-            style: const TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: Colors.grey,
-            ),
-          ),
-          const SizedBox(height: 12),
-          DocEditor(
-            value: request.description,
-            onChanged: (v) =>
-                ref.read(requestProvider.notifier).updateDescription(v),
-          ),
-        ],
+      child: DocEditor(
+        title: t['doc'] ?? 'Doc',
+        richTextLabel: t['rich_text'] ?? 'Rich Text',
+        markdownLabel: t['markdown'] ?? 'Markdown',
+        editLabel: t['edit'] ?? 'Edit',
+        previewLabel: t['preview'] ?? 'Preview',
+        value: request.description,
+        onChanged: (v) => ref.read(requestProvider.notifier).updateDescription(v),
       ),
     );
   }

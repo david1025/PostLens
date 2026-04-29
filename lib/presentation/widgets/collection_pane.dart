@@ -108,15 +108,12 @@ class _CollectionPaneState extends ConsumerState<CollectionPane> {
                         style: const TextStyle(fontSize: 12),
                       ),
                       const SizedBox(height: 24),
-                      Text(
-                        t['doc'] ?? 'Doc',
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey),
-                      ),
-                      const SizedBox(height: 12),
                       DocEditor(
+                        title: t['doc'] ?? 'Doc',
+                        richTextLabel: t['rich_text'] ?? 'Rich Text',
+                        markdownLabel: t['markdown'] ?? 'Markdown',
+                        editLabel: t['edit'] ?? 'Edit',
+                        previewLabel: t['preview'] ?? 'Preview',
                         value: description,
                         onChanged: (v) {
                           if (collection == null) return;
