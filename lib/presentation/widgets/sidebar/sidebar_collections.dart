@@ -213,7 +213,7 @@ extension SidebarCollectionsExt on _SidebarState {
         title: Text(node.name,
             style: const TextStyle(fontSize: 12),
             overflow: TextOverflow.ellipsis),
-        isSelected: ref.watch(requestProvider).id == node.request.id,
+        isSelected: ref.watch(requestProvider).id == node.id,
         icon: Text(
           node.request.method,
           style: TextStyle(
@@ -226,6 +226,7 @@ extension SidebarCollectionsExt on _SidebarState {
         children: [],
         onTap: () {
           final requestWithPath = node.request.copyWith(
+            id: node.id,
             name: node.name,
             folderPath: currentPath,
             collectionId: collection.id,
@@ -391,11 +392,13 @@ extension SidebarCollectionsExt on _SidebarState {
                                 .toString(),
                             name: '${node.name} Copy');
                       } else if (node is CollectionRequest) {
-                        duplicatedNode = node.copyWith(
-                            id: DateTime.now()
+                        final newId = DateTime.now()
                                 .millisecondsSinceEpoch
-                                .toString(),
-                            name: '${node.name} Copy');
+                                .toString();
+                        duplicatedNode = node.copyWith(
+                            id: newId,
+                            name: '${node.name} Copy',
+                            request: node.request.copyWith(id: newId, name: '${node.name} Copy'));
                       } else {
                         return;
                       }
