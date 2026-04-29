@@ -7,6 +7,7 @@ import '../utils/markdown_quill_converter.dart';
 import 'app_code_editor.dart';
 
 enum DocEditorMode { richText, markdown }
+enum MarkdownViewMode { edit, preview }
 
 class DocEditor extends StatefulWidget {
   final String value;
@@ -24,8 +25,10 @@ class DocEditor extends StatefulWidget {
 
 class _DocEditorState extends State<DocEditor> {
   static const _debounceDuration = Duration(milliseconds: 350);
+  static const _contentFontSize = 12.0;
 
   DocEditorMode _mode = DocEditorMode.richText;
+  MarkdownViewMode _markdownViewMode = MarkdownViewMode.edit;
   late String _markdown;
   late QuillController _quillController;
   Timer? _debounce;
@@ -95,13 +98,39 @@ class _DocEditorState extends State<DocEditor> {
     setState(() {
       _mode = mode;
       if (_mode == DocEditorMode.richText) {
+        _markdownViewMode = MarkdownViewMode.edit;
+      }
+      if (_mode == DocEditorMode.richText) {
         _resetQuillFromMarkdown();
       }
     });
   }
 
+  void _switchMarkdownViewMode(MarkdownViewMode mode) {
+    if (mode == _markdownViewMode) return;
+    setState(() => _markdownViewMode = mode);
+  }
+
   @override
   Widget build(BuildContext context) {
+    final baseStyles = DefaultStyles.getInstance(context);
+    final paragraph = baseStyles.paragraph;
+    final placeholder = baseStyles.placeHolder;
+    final customStyles = baseStyles.merge(
+      DefaultStyles(
+        paragraph: paragraph == null
+            ? null
+            : paragraph.copyWith(
+                style: paragraph.style.copyWith(fontSize: _contentFontSize),
+              ),
+        placeHolder: placeholder == null
+            ? null
+            : placeholder.copyWith(
+                style: placeholder.style.copyWith(fontSize: _contentFontSize),
+              ),
+      ),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -122,6 +151,24 @@ class _DocEditorState extends State<DocEditor> {
               onSelectionChanged: (s) => _switchMode(s.first),
               showSelectedIcon: false,
             ),
+            if (_mode == DocEditorMode.markdown) ...[
+              const SizedBox(width: 12),
+              SegmentedButton<MarkdownViewMode>(
+                segments: const [
+                  ButtonSegment(
+                    value: MarkdownViewMode.edit,
+                    label: Text('Edit'),
+                  ),
+                  ButtonSegment(
+                    value: MarkdownViewMode.preview,
+                    label: Text('Preview'),
+                  ),
+                ],
+                selected: {_markdownViewMode},
+                onSelectionChanged: (s) => _switchMarkdownViewMode(s.first),
+                showSelectedIcon: false,
+              ),
+            ],
           ],
         ),
         const SizedBox(height: 10),
@@ -134,32 +181,69 @@ class _DocEditorState extends State<DocEditor> {
           ),
           clipBehavior: Clip.antiAlias,
           child: _mode == DocEditorMode.markdown
-              ? AppCodeEditor(
-                  key: ValueKey(_mode),
-                  text: _markdown,
-                  hint: '',
-                  language: 'markdown',
-                  onChanged: (v) {
-                    if (v == _markdown) return;
-                    setState(() => _markdown = v);
-                    _scheduleEmit(v);
-                  },
-                )
+              ? _markdownViewMode == MarkdownViewMode.edit
+                  ? AppCodeEditor(
+                      key: ValueKey('${_mode}-${_markdownViewMode}'),
+                      text: _markdown,
+                      hint: '',
+                      language: 'markdown',
+                      onChanged: (v) {
+                        if (v == _markdown) return;
+                        setState(() => _markdown = v);
+                        _scheduleEmit(v);
+                      },
+                    )
+                  : QuillEditor.basic(
+                      key: ValueKey('${_mode}-${_markdownViewMode}'),
+                      controller: QuillController(
+                        document:
+                            Document.fromDelta(markdownToQuillDelta(_markdown)),
+                        selection: const TextSelection.collapsed(offset: 0),
+                        readOnly: true,
+                      ),
+                      config: QuillEditorConfig(
+                        autoFocus: false,
+                        expands: true,
+                        padding: const EdgeInsets.all(12),
+                        scrollable: true,
+                        customStyles: customStyles,
+                      ),
+                    )
               : Column(
                   children: [
-                    QuillSimpleToolbar(
-                      controller: _quillController,
-                      config: const QuillSimpleToolbarConfig(),
+                    DefaultTextStyle.merge(
+                      style: const TextStyle(fontSize: _contentFontSize),
+                      child: QuillSimpleToolbar(
+                        controller: _quillController,
+                        config: const QuillSimpleToolbarConfig(
+                          toolbarSize: 32,
+                          iconTheme: QuillIconTheme(
+                            iconButtonUnselectedData: IconButtonData(
+                              iconSize: 18,
+                              padding: EdgeInsets.zero,
+                              constraints:
+                                  BoxConstraints.tightFor(width: 32, height: 32),
+                            ),
+                            iconButtonSelectedData: IconButtonData(
+                              iconSize: 18,
+                              padding: EdgeInsets.zero,
+                              constraints:
+                                  BoxConstraints.tightFor(width: 32, height: 32),
+                            ),
+                          ),
+                        ),
+                      ),
                     ),
                     Divider(height: 1, color: Theme.of(context).dividerColor),
                     Expanded(
                       child: QuillEditor.basic(
                         controller: _quillController,
-                        config: const QuillEditorConfig(
+                        config: QuillEditorConfig(
                           autoFocus: false,
                           expands: true,
-                          padding: EdgeInsets.all(12),
+                          padding: const EdgeInsets.all(12),
                           scrollable: true,
+                          customStyles: customStyles,
                         ),
                       ),
                     ),
