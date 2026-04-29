@@ -1,4 +1,4 @@
-import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 
 Delta markdownToQuillDelta(String markdown) {
   final delta = Delta();
@@ -219,4 +219,3 @@ String _escapeMarkdownText(String text) {
     (m) => '\\${m.group(1)}',
   );
 }
-
