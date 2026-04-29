@@ -223,7 +223,17 @@ extension SidebarCollectionsExt on _SidebarState {
           ),
         ),
         actionButtons: _buildActionButtons(collection, node, currentPath),
-        children: [],
+        children: [
+          for (final c in node.cases)
+            _buildRequestCaseNode(
+              collection,
+              node,
+              c,
+              level + 1,
+              [...currentPath, node.name],
+              parentFolderId,
+            ),
+        ],
         onTap: () {
           final requestWithPath = node.request.copyWith(
             id: node.id,
@@ -239,13 +249,66 @@ extension SidebarCollectionsExt on _SidebarState {
           }
         },
       );
+    } else if (node is CollectionRequestCase) {
+      return _buildRequestCaseNode(
+        collection,
+        null,
+        node,
+        level,
+        currentPath,
+        parentFolderId,
+      );
     }
     return const SizedBox();
+  }
+
+  Widget _buildRequestCaseNode(
+    CollectionModel collection,
+    CollectionRequest? parentRequest,
+    CollectionRequestCase caseNode,
+    int level,
+    List<String> currentPath,
+    String? parentFolderId,
+  ) {
+    return _buildTreeNode(
+      id: caseNode.id,
+      level: level,
+      initiallyExpanded: false,
+      title: Text(caseNode.name,
+          style: const TextStyle(fontSize: 12),
+          overflow: TextOverflow.ellipsis),
+      isSelected: ref.watch(requestProvider).id == caseNode.id,
+      icon: const FaIcon(FontAwesomeIcons.bookmark, size: 11, color: Colors.grey),
+      actionButtons: parentRequest == null
+          ? _buildActionButtons(collection, caseNode, currentPath)
+          : _buildCaseActionButtons(
+              collection,
+              parentRequest,
+              caseNode,
+              currentPath,
+            ),
+      children: const [],
+      onTap: () {
+        final requestWithPath = caseNode.request.copyWith(
+          id: caseNode.id,
+          name: caseNode.name,
+          folderPath: currentPath,
+          collectionId: collection.id,
+          folderId: parentFolderId,
+        );
+        if (widget.onRequestTap != null) {
+          widget.onRequestTap!(requestWithPath);
+        } else {
+          ref.read(requestProvider.notifier).loadRequest(requestWithPath);
+        }
+      },
+    );
   }
 
   Widget _buildActionButtons(CollectionModel collection, CollectionNode? node,
       List<String> folderPath) {
     final isRequest = node is CollectionRequest;
+    final isContainer = node == null || node is CollectionFolder;
     return Consumer(builder: (context, ref, _) {
       final t = ref.watch(translationsProvider);
       return SizedBox(
@@ -253,7 +316,7 @@ extension SidebarCollectionsExt on _SidebarState {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            if (!isRequest)
+            if (isContainer)
               InkWell(
                 onTap: () {
                   final requestId =
@@ -395,10 +458,19 @@ extension SidebarCollectionsExt on _SidebarState {
                         final newId = DateTime.now()
                                 .millisecondsSinceEpoch
                                 .toString();
+                        final newCases = node.cases.map((c) {
+                          final newCaseId = '${newId}_${c.id}';
+                          return c.copyWith(
+                            id: newCaseId,
+                            request: c.request.copyWith(id: newCaseId),
+                          );
+                        }).toList();
                         duplicatedNode = node.copyWith(
                             id: newId,
                             name: '${node.name} Copy',
-                            request: node.request.copyWith(id: newId, name: '${node.name} Copy'));
+                            request: node.request
+                                .copyWith(id: newId, name: '${node.name} Copy'),
+                            cases: newCases);
                       } else {
                         return;
                       }
@@ -423,7 +495,7 @@ extension SidebarCollectionsExt on _SidebarState {
                   }
                 },
                 itemBuilder: (context) => [
-                  if (!isRequest)
+                  if (isContainer)
                     PopupMenuItem(
                       value: 'add_request',
                       height: 24,
@@ -432,7 +504,7 @@ extension SidebarCollectionsExt on _SidebarState {
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.normal)),
                     ),
-                  if (!isRequest)
+                  if (isContainer)
                     PopupMenuItem(
                       value: 'add_folder',
                       height: 24,
@@ -441,8 +513,8 @@ extension SidebarCollectionsExt on _SidebarState {
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.normal)),
                     ),
-                  if (!isRequest) const PopupMenuDivider(height: 8),
-                  if (!isRequest)
+                  if (isContainer) const PopupMenuDivider(height: 8),
+                  if (isContainer)
                     PopupMenuItem(
                       value: 'run',
                       height: 24,
@@ -451,7 +523,7 @@ extension SidebarCollectionsExt on _SidebarState {
                           style: const TextStyle(
                               fontSize: 12, fontWeight: FontWeight.normal)),
                     ),
-                  if (!isRequest) const PopupMenuDivider(height: 8),
+                  if (isContainer) const PopupMenuDivider(height: 8),
                   PopupMenuItem(
                     value: 'rename',
                     height: 24,
@@ -510,6 +582,167 @@ extension SidebarCollectionsExt on _SidebarState {
     });
   }
 
+  Widget _buildCaseActionButtons(
+    CollectionModel collection,
+    CollectionRequest parentRequest,
+    CollectionRequestCase caseNode,
+    List<String> folderPath,
+  ) {
+    return Consumer(builder: (context, ref, _) {
+      final t = ref.watch(translationsProvider);
+      return SizedBox(
+        height: 24,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Builder(
+              builder: (popupContext) => PopupMenuButton<String>(
+                tooltip: 'More actions',
+                offset: const Offset(24, 0),
+                constraints: const BoxConstraints(),
+                onOpened: () {
+                  final state = popupContext
+                      .findAncestorStateOfType<HoverContainerState>();
+                  if (state != null) {
+                    state.setPopupOpen(true);
+                  }
+                },
+                onCanceled: () {
+                  final state = popupContext
+                      .findAncestorStateOfType<HoverContainerState>();
+                  if (state != null) {
+                    state.setPopupOpen(false);
+                  }
+                },
+                onSelected: (value) {
+                  final state = popupContext
+                      .findAncestorStateOfType<HoverContainerState>();
+                  if (state != null) {
+                    state.setPopupOpen(false);
+                  }
+                  if (value == 'rename') {
+                    _showRenameDialog(context,
+                        collection: collection, node: caseNode);
+                  } else if (value == 'duplicate') {
+                    final newId =
+                        DateTime.now().millisecondsSinceEpoch.toString();
+                    final duplicated = caseNode.copyWith(
+                      id: newId,
+                      name: '${caseNode.name} Copy',
+                      request: caseNode.request
+                          .copyWith(id: newId, name: '${caseNode.name} Copy'),
+                    );
+                    final updatedCollection = _duplicateCaseInCollection(
+                      collection,
+                      parentRequestId: parentRequest.id,
+                      targetCaseId: caseNode.id,
+                      newCase: duplicated,
+                    );
+                    ref
+                        .read(collectionsProvider.notifier)
+                        .updateCollection(updatedCollection);
+                  } else if (value == 'delete') {
+                    final updatedCollection = _deleteCaseInCollection(
+                      collection,
+                      parentRequestId: parentRequest.id,
+                      caseId: caseNode.id,
+                    );
+                    ref
+                        .read(collectionsProvider.notifier)
+                        .updateCollection(updatedCollection);
+                  }
+                },
+                itemBuilder: (context) => [
+                  PopupMenuItem(
+                    value: 'rename',
+                    height: 24,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(t['rename'] ?? 'Rename',
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.normal)),
+                  ),
+                  PopupMenuItem(
+                    value: 'duplicate',
+                    height: 24,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(t['duplicate'] ?? 'Duplicate',
+                        style: const TextStyle(
+                            fontSize: 12, fontWeight: FontWeight.normal)),
+                  ),
+                  const PopupMenuDivider(height: 8),
+                  PopupMenuItem(
+                    value: 'delete',
+                    height: 24,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    child: Text(t['delete'] ?? 'Delete',
+                        style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.red,
+                            fontWeight: FontWeight.normal)),
+                  ),
+                ],
+                child: const Padding(
+                  padding: EdgeInsets.all(4.0),
+                  child: FaIcon(FontAwesomeIcons.ellipsis,
+                      size: 13, color: Colors.grey),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  CollectionModel _duplicateCaseInCollection(
+    CollectionModel collection, {
+    required String parentRequestId,
+    required String targetCaseId,
+    required CollectionRequestCase newCase,
+  }) {
+    List<CollectionNode> visitNodes(List<CollectionNode> nodes) {
+      return nodes.map((node) {
+        if (node is CollectionFolder) {
+          return node.copyWith(children: visitNodes(node.children));
+        }
+        if (node is CollectionRequest && node.id == parentRequestId) {
+          final nextCases = <CollectionRequestCase>[];
+          for (final c in node.cases) {
+            nextCases.add(c);
+            if (c.id == targetCaseId) {
+              nextCases.add(newCase);
+            }
+          }
+          return node.copyWith(cases: nextCases);
+        }
+        return node;
+      }).toList();
+    }
+
+    return collection.copyWith(children: visitNodes(collection.children));
+  }
+
+  CollectionModel _deleteCaseInCollection(
+    CollectionModel collection, {
+    required String parentRequestId,
+    required String caseId,
+  }) {
+    List<CollectionNode> visitNodes(List<CollectionNode> nodes) {
+      return nodes.map((node) {
+        if (node is CollectionFolder) {
+          return node.copyWith(children: visitNodes(node.children));
+        }
+        if (node is CollectionRequest && node.id == parentRequestId) {
+          return node.copyWith(
+              cases: node.cases.where((c) => c.id != caseId).toList());
+        }
+        return node;
+      }).toList();
+    }
+
+    return collection.copyWith(children: visitNodes(collection.children));
+  }
+
   Color _getMethodColor(String method) {
     switch (method.toUpperCase()) {
       case 'GET':
@@ -548,6 +781,20 @@ extension SidebarCollectionsExt on _SidebarState {
           }
         } else if (node is CollectionFolder) {
           result.add(node.copyWith(children: updateNodes(node.children)));
+        } else if (node is CollectionRequest) {
+          final updatedCases = <CollectionRequestCase>[];
+          for (final c in node.cases) {
+            if (c.id == targetId) {
+              if (newNode is CollectionRequestCase) {
+                updatedCases.add(newNode);
+              } else if (newNode != null) {
+                updatedCases.add(c);
+              }
+            } else {
+              updatedCases.add(c);
+            }
+          }
+          result.add(node.copyWith(cases: updatedCases));
         } else {
           result.add(node);
         }
@@ -569,6 +816,16 @@ extension SidebarCollectionsExt on _SidebarState {
         } else if (node is CollectionFolder) {
           result.removeLast();
           result.add(node.copyWith(children: duplicateNode(node.children)));
+        } else if (node is CollectionRequest) {
+          final nextCases = <CollectionRequestCase>[];
+          for (final c in node.cases) {
+            nextCases.add(c);
+            if (c.id == targetId && newNode is CollectionRequestCase) {
+              nextCases.add(newNode);
+            }
+          }
+          result.removeLast();
+          result.add(node.copyWith(cases: nextCases));
         }
       }
       return result;
@@ -624,7 +881,7 @@ extension SidebarCollectionsExt on _SidebarState {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                        '${t['rename'] ?? 'Rename'} ${isCollection ? (t['collection'] ?? 'Collection') : (node is CollectionFolder ? (t['folder'] ?? 'Folder') : (t['request'] ?? 'Request'))}',
+                        '${t['rename'] ?? 'Rename'} ${isCollection ? (t['collection'] ?? 'Collection') : (node is CollectionFolder ? (t['folder'] ?? 'Folder') : (node is CollectionRequestCase ? 'Case' : (t['request'] ?? 'Request')))}',
                         style: const TextStyle(
                             fontWeight: FontWeight.bold, fontSize: 14)),
                     InkWell(
@@ -714,6 +971,12 @@ extension SidebarCollectionsExt on _SidebarState {
                             } else if (node is CollectionRequest) {
                               updatedNode =
                                   node.copyWith(name: controller.text.trim());
+                            } else if (node is CollectionRequestCase) {
+                              updatedNode = node.copyWith(
+                                name: controller.text.trim(),
+                                request: node.request
+                                    .copyWith(name: controller.text.trim()),
+                              );
                             } else {
                               updatedNode = node;
                             }
