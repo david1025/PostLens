@@ -25,6 +25,7 @@ import '../../domain/services/collection_variables_service.dart';
 import '../../domain/models/collection_model.dart';
 import '../providers/collection_provider.dart';
 import 'app_code_editor.dart';
+import 'doc_editor.dart';
 import 'hover_overlay.dart';
 import 'script_snippets_overlay.dart';
 import 'table_cell_text_field.dart';
@@ -94,9 +95,9 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     final requestId = ref.read(requestProvider).id;
     final uiState = ref.read(requestPageUiProvider(requestId));
     _tabController = TabController(
-      length: 6,
+      length: 7,
       vsync: this,
-      initialIndex: uiState.requestTabIndex >= 6 ? 5 : uiState.requestTabIndex,
+      initialIndex: uiState.requestTabIndex >= 7 ? 6 : uiState.requestTabIndex,
     );
     _tabController.addListener(_handleTabChanged);
     _urlFocusNode.addListener(() => setState(() {}));
@@ -550,6 +551,7 @@ class _RequestPaneState extends ConsumerState<RequestPane>
                         Tab(text: t['body'] ?? 'Body'),
                         Tab(text: t['scripts'] ?? 'Scripts'),
                         Tab(text: t['settings'] ?? 'Settings'),
+                        Tab(text: t['doc'] ?? 'Doc'),
                       ],
                     ),
                   ),
@@ -568,6 +570,7 @@ class _RequestPaneState extends ConsumerState<RequestPane>
                         _buildScriptTab(request),
                         SingleChildScrollView(
                             child: _buildSettingsTab(request)),
+                        SingleChildScrollView(child: _buildDocTab(request)),
                       ],
                     ),
                   )
@@ -3161,6 +3164,32 @@ class _RequestPaneState extends ConsumerState<RequestPane>
                 .updateSettings('cipherSuiteSelection', val),
             maxLines: 3,
             hint: t['enter_cipher_suites'] ?? 'Enter cipher suites',
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocTab(HttpRequestModel request) {
+    final t = ref.watch(translationsProvider);
+    return Padding(
+      padding: const EdgeInsets.all(16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            t['doc'] ?? 'Doc',
+            style: const TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: Colors.grey,
+            ),
+          ),
+          const SizedBox(height: 12),
+          DocEditor(
+            value: request.description,
+            onChanged: (v) =>
+                ref.read(requestProvider.notifier).updateDescription(v),
           ),
         ],
       ),

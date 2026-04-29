@@ -20,22 +20,26 @@ abstract class CollectionNode {
 
 class CollectionFolder extends CollectionNode {
   final List<CollectionNode> children;
+  final String description;
 
   CollectionFolder({
     required super.id,
     required super.name,
     this.children = const [],
+    this.description = '',
   });
 
   CollectionFolder copyWith({
     String? id,
     String? name,
     List<CollectionNode>? children,
+    String? description,
   }) {
     return CollectionFolder(
       id: id ?? this.id,
       name: name ?? this.name,
       children: children ?? this.children,
+      description: description ?? this.description,
     );
   }
 
@@ -46,6 +50,7 @@ class CollectionFolder extends CollectionNode {
       'id': id,
       'name': name,
       'children': children.map((e) => e.toJson()).toList(),
+      'description': description,
     };
   }
 
@@ -57,6 +62,7 @@ class CollectionFolder extends CollectionNode {
               ?.map((e) => CollectionNode.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      description: json['description'] as String? ?? '',
     );
   }
 }
@@ -107,12 +113,14 @@ class CollectionModel {
   final String workspaceId;
   final String name;
   final List<CollectionNode> children;
+  final String description;
 
   CollectionModel({
     required this.id,
     required this.workspaceId,
     required this.name,
     this.children = const [],
+    this.description = '',
   });
 
   CollectionModel copyWith({
@@ -120,12 +128,14 @@ class CollectionModel {
     String? workspaceId,
     String? name,
     List<CollectionNode>? children,
+    String? description,
   }) {
     return CollectionModel(
       id: id ?? this.id,
       workspaceId: workspaceId ?? this.workspaceId,
       name: name ?? this.name,
       children: children ?? this.children,
+      description: description ?? this.description,
     );
   }
 
@@ -135,6 +145,7 @@ class CollectionModel {
       'workspaceId': workspaceId,
       'name': name,
       'children': children.map((e) => e.toJson()).toList(),
+      'description': description,
     };
   }
 
@@ -147,6 +158,7 @@ class CollectionModel {
               ?.map((e) => CollectionNode.fromJson(e as Map<String, dynamic>))
               .toList() ??
           [],
+      description: json['description'] as String? ?? '',
     );
   }
 }

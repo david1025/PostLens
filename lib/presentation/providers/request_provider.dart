@@ -252,6 +252,10 @@ class RequestNotifier extends StateNotifier<HttpRequestModel> {
     _setState(state.copyWith(name: name));
   }
 
+  void updateDescription(String description) {
+    _setState(state.copyWith(description: description));
+  }
+
   void addParam(String key, String value, [String desc = '']) {
     final params = List<Map<String, String>>.from(state.params);
     params.add(

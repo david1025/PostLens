@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../domain/models/collection_model.dart';
 import '../providers/collection_provider.dart';
 import '../providers/settings_provider.dart';
+import 'doc_editor.dart';
 
 class CollectionPane extends ConsumerStatefulWidget {
   final String collectionId;
@@ -50,6 +51,7 @@ class _CollectionPaneState extends ConsumerState<CollectionPane> {
       if (child is CollectionFolder) folderCount++;
       if (child is CollectionRequest) requestCount++;
     }
+    final description = folder?.description ?? collection?.description ?? '';
 
     return Container(
       color: Theme.of(context).cardTheme.color,
@@ -104,6 +106,31 @@ class _CollectionPaneState extends ConsumerState<CollectionPane> {
                       Text(
                         'This ${widget.isFolder ? "folder" : "collection"} contains $folderCount folders and $requestCount requests.',
                         style: const TextStyle(fontSize: 12),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        t['doc'] ?? 'Doc',
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      DocEditor(
+                        value: description,
+                        onChanged: (v) {
+                          if (collection == null) return;
+                          if (folder != null) {
+                            ref
+                                .read(collectionsProvider.notifier)
+                                .updateFolderDescription(
+                                    collection.id, folder.id, v);
+                          } else {
+                            ref
+                                .read(collectionsProvider.notifier)
+                                .updateCollectionDescription(collection.id, v);
+                          }
+                        },
                       ),
                     ],
                   ),

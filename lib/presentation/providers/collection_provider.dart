@@ -9,6 +9,24 @@ class CollectionNotifier extends StateNotifier<List<CollectionModel>> {
     _loadCollections();
   }
 
+  List<CollectionNode> _updateFolderInNodes(
+    List<CollectionNode> nodes,
+    String folderId,
+    CollectionFolder Function(CollectionFolder folder) update,
+  ) {
+    return nodes.map((node) {
+      if (node is CollectionFolder) {
+        if (node.id == folderId) {
+          return update(node);
+        }
+        return node.copyWith(
+          children: _updateFolderInNodes(node.children, folderId, update),
+        );
+      }
+      return node;
+    }).toList();
+  }
+
   Future<void> _loadCollections() async {
     try {
       final dbHelper = DatabaseHelper.instance;
@@ -53,6 +71,26 @@ class CollectionNotifier extends StateNotifier<List<CollectionModel>> {
     } catch (e, st) {
       Error.throwWithStackTrace(e, st);
     }
+  }
+
+  Future<void> updateCollectionDescription(
+      String collectionId, String description) async {
+    final collection = state.firstWhere((c) => c.id == collectionId);
+    await updateCollection(collection.copyWith(description: description));
+  }
+
+  Future<void> updateFolderDescription(
+    String collectionId,
+    String folderId,
+    String description,
+  ) async {
+    final collection = state.firstWhere((c) => c.id == collectionId);
+    final updatedChildren = _updateFolderInNodes(
+      collection.children,
+      folderId,
+      (folder) => folder.copyWith(description: description),
+    );
+    await updateCollection(collection.copyWith(children: updatedChildren));
   }
 
   Future<void> deleteCollection(String id) async {

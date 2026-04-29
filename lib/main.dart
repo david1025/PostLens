@@ -2,12 +2,14 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:window_manager/window_manager.dart';
 import 'data/local/database_helper.dart';
 import 'presentation/pages/home_page.dart';
 import 'core/app_theme.dart';
 import 'presentation/providers/settings_provider.dart';
 import 'src/rust/frb_generated.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 
 import 'package:toastification/toastification.dart';
 
@@ -107,6 +109,16 @@ class PostLensApp extends ConsumerWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         locale: locale,
+        supportedLocales: const [
+          Locale('en'),
+          Locale('zh'),
+        ],
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          FlutterQuillLocalizations.delegate,
+        ],
         scrollBehavior: const NoOverscrollBehavior(),
         home: const HomePage(),
       ),
