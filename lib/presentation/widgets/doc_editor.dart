@@ -38,6 +38,8 @@ class DocEditor extends StatefulWidget {
 class _DocEditorState extends State<DocEditor> {
   static const _debounceDuration = Duration(milliseconds: 350);
   static const _contentFontSize = 12.0;
+  static const _toolbarButtonSize = 26.0;
+  static const _toolbarIconSize = 14.0;
 
   DocEditorMode _mode = DocEditorMode.richText;
   MarkdownViewMode _markdownViewMode = MarkdownViewMode.edit;
@@ -279,19 +281,32 @@ class _DocEditorState extends State<DocEditor> {
                           child: QuillSimpleToolbar(
                             controller: _quillController,
                             config: const QuillSimpleToolbarConfig(
-                              toolbarSize: 32,
+                              toolbarSize: _toolbarButtonSize,
+                              toolbarSectionSpacing: 2,
+                              toolbarRunSpacing: 2,
+                              showDividers: false,
+                              showFontFamily: false,
+                              showFontSize: false,
+                              showHeaderStyle: false,
+                              showSearchButton: false,
                               iconTheme: QuillIconTheme(
                                 iconButtonUnselectedData: IconButtonData(
-                                  iconSize: 18,
+                                  iconSize: _toolbarIconSize,
                                   padding: EdgeInsets.zero,
+                                  visualDensity: VisualDensity.compact,
                                   constraints: BoxConstraints.tightFor(
-                                      width: 32, height: 32),
+                                    width: _toolbarButtonSize,
+                                    height: _toolbarButtonSize,
+                                  ),
                                 ),
                                 iconButtonSelectedData: IconButtonData(
-                                  iconSize: 18,
+                                  iconSize: _toolbarIconSize,
                                   padding: EdgeInsets.zero,
+                                  visualDensity: VisualDensity.compact,
                                   constraints: BoxConstraints.tightFor(
-                                      width: 32, height: 32),
+                                    width: _toolbarButtonSize,
+                                    height: _toolbarButtonSize,
+                                  ),
                                 ),
                               ),
                             ),
