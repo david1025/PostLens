@@ -1077,11 +1077,11 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
 
     return MultiSplitViewTheme(
       data: MultiSplitViewThemeData(
-        dividerThickness: 0,
-        dividerHandleBuffer: 10,
+        dividerThickness: 1,
+        dividerHandleBuffer: 0,
         dividerPainter: DividerPainters.background(
-          color: Colors.transparent,
-          highlightedColor: Colors.transparent,
+          color: Theme.of(context).dividerColor,
+          highlightedColor: Theme.of(context).colorScheme.primary,
         ),
       ),
       child: Padding(
@@ -1986,4 +1986,3 @@ enum _TabContextMenuAction {
   closeAllTabs,
   forceCloseAllTabs,
 }
-
