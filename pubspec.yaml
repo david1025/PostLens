@@ -75,6 +75,7 @@ dev_dependencies:
 inno_bundle:
   id: "d956e0b0-3a20-11f1-b366-c7db2cab24f7"
   publisher: "David"
+  name: "PostLens"
   languages:
     - english
 
