@@ -51,6 +51,7 @@ dependencies:
   encrypt: ^5.0.3
   dart_sm: ^0.1.5
   url_launcher: ^6.2.1
+  sqlite3: ^2.4.5
   sqlite3_flutter_libs: ^0.6.0+eol
   isolate_manager: ^4.1.5+1
   collection: ^1.17.1
