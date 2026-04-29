@@ -181,10 +181,6 @@ class _ImportDialogState extends ConsumerState<ImportDialog> {
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
-                border: Border.all(
-                  color: Theme.of(context).primaryColor.withOpacity(0.5),
-                  width: 2,
-                ),
               ),
               child: Row(
                 children: [
