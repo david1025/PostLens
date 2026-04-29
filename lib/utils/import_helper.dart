@@ -163,6 +163,73 @@ class ImportHelper {
     return '';
   }
 
+  static Map<String, dynamic>? _normalizeSchema(
+      dynamic schema, Map<String, dynamic> rootData,
+      {int depth = 0}) {
+    if (depth > 10) return null;
+    if (schema is! Map<String, dynamic>) return null;
+    if (schema.containsKey('\$ref')) {
+      final resolved = _resolveRef(schema['\$ref'], rootData);
+      return _normalizeSchema(resolved, rootData, depth: depth + 1);
+    }
+    return schema;
+  }
+
+  static List<String> _collectQueryKeysFromSchema(
+      Map<String, dynamic> schema, Map<String, dynamic> rootData, String prefix,
+      {int depth = 0}) {
+    if (depth > 10) return [prefix];
+
+    final normalized = _normalizeSchema(schema, rootData, depth: depth);
+    if (normalized == null) return [prefix];
+
+    final type = normalized['type'];
+    final isObject = type == 'object' || normalized.containsKey('properties');
+    if (!isObject) return [prefix];
+
+    final properties = normalized['properties'];
+    if (properties is! Map) return [prefix];
+
+    final keys = <String>[];
+    properties.forEach((key, value) {
+      final childPrefix = '$prefix.$key';
+      if (value is Map<String, dynamic>) {
+        keys.addAll(
+            _collectQueryKeysFromSchema(value, rootData, childPrefix, depth: depth + 1));
+      } else {
+        keys.add(childPrefix);
+      }
+    });
+    return keys.isEmpty ? [prefix] : keys;
+  }
+
+  static List<String> _collectQueryKeysFromSchemaRoot(
+      Map<String, dynamic> schema, Map<String, dynamic> rootData,
+      {int depth = 0}) {
+    if (depth > 10) return const [];
+
+    final normalized = _normalizeSchema(schema, rootData, depth: depth);
+    if (normalized == null) return const [];
+
+    final type = normalized['type'];
+    final isObject = type == 'object' || normalized.containsKey('properties');
+    if (!isObject) return const [];
+
+    final properties = normalized['properties'];
+    if (properties is! Map) return const [];
+
+    final keys = <String>[];
+    properties.forEach((key, value) {
+      if (value is Map<String, dynamic>) {
+        keys.addAll(
+            _collectQueryKeysFromSchema(value, rootData, key.toString(), depth: depth + 1));
+      } else {
+        keys.add(key.toString());
+      }
+    });
+    return keys;
+  }
+
   static CollectionModel? parseSwagger(String jsonStr, String workspaceId) {
     final data = jsonDecode(jsonStr);
     if (data is! Map<String, dynamic>) return null;
@@ -205,6 +272,7 @@ class ImportHelper {
 
       methods.forEach((method, details) {
         if (details is! Map) return;
+        final methodLower = method.toString().toLowerCase();
         if (![
           'get',
           'post',
@@ -213,7 +281,7 @@ class ImportHelper {
           'patch',
           'options',
           'head'
-        ].contains(method.toString().toLowerCase())) {
+        ].contains(methodLower)) {
           return;
         }
 
@@ -245,22 +313,44 @@ class ImportHelper {
           if (name.isEmpty) continue;
 
           if (inLocation == 'query') {
-            params.add({'key': name, 'value': '', 'enabled': 'true'});
+            final schema = _normalizeSchema(param['schema'], data);
+            final keys = (schema != null &&
+                    ((schema['type'] == 'object') || schema.containsKey('properties')))
+                ? _collectQueryKeysFromSchemaRoot(schema, data)
+                : const <String>[];
+            if (keys.isNotEmpty) {
+              for (final k in keys) {
+                params.add({'key': k, 'value': '', 'enabled': 'true'});
+              }
+            } else {
+              params.add({'key': name, 'value': '', 'enabled': 'true'});
+            }
           } else if (inLocation == 'header') {
             headers.add({'key': name, 'value': '', 'enabled': 'true'});
           } else if (inLocation == 'body') {
-            bodyType = 'raw';
-            rawBodyType = 'JSON';
-            headers.add({
-              'key': 'Content-Type',
-              'value': 'application/json',
-              'enabled': 'true'
-            });
-            final schema = param['schema'];
-            if (schema is Map<String, dynamic>) {
-              final sample = _generateSampleFromSchema(schema, data);
-              if (sample != null) {
-                body = const JsonEncoder.withIndent('  ').convert(sample);
+            final schema = _normalizeSchema(param['schema'], data);
+            final keys = (methodLower == 'get' &&
+                    schema != null &&
+                    ((schema['type'] == 'object') || schema.containsKey('properties')))
+                ? _collectQueryKeysFromSchemaRoot(schema, data)
+                : const <String>[];
+            if (keys.isNotEmpty) {
+              for (final k in keys) {
+                params.add({'key': k, 'value': '', 'enabled': 'true'});
+              }
+            } else {
+              bodyType = 'raw';
+              rawBodyType = 'JSON';
+              headers.add({
+                'key': 'Content-Type',
+                'value': 'application/json',
+                'enabled': 'true'
+              });
+              if (schema != null) {
+                final sample = _generateSampleFromSchema(schema, data);
+                if (sample != null) {
+                  body = const JsonEncoder.withIndent('  ').convert(sample);
+                }
               }
             }
           }
@@ -278,22 +368,33 @@ class ImportHelper {
           if (reqBody['content'] is Map) {
             final content = reqBody['content'] as Map;
             if (content.containsKey('application/json')) {
-              bodyType = 'raw';
-              rawBodyType = 'JSON';
-              headers.add({
-                'key': 'Content-Type',
-                'value': 'application/json',
-                'enabled': 'true'
-              });
-
               final schema = (content['application/json'] is Map)
                   ? (content['application/json'] as Map)['schema']
                   : null;
-              if (schema is Map<String, dynamic>) {
-                final sample = _generateSampleFromSchema(schema, data);
-                if (sample != null) {
-                  body =
-                      const JsonEncoder.withIndent('  ').convert(sample);
+              final normalizedSchema = _normalizeSchema(schema, data);
+              final keys = (methodLower == 'get' &&
+                      normalizedSchema != null &&
+                      ((normalizedSchema['type'] == 'object') ||
+                          normalizedSchema.containsKey('properties')))
+                  ? _collectQueryKeysFromSchemaRoot(normalizedSchema, data)
+                  : const <String>[];
+              if (keys.isNotEmpty) {
+                for (final k in keys) {
+                  params.add({'key': k, 'value': '', 'enabled': 'true'});
+                }
+              } else {
+                bodyType = 'raw';
+                rawBodyType = 'JSON';
+                headers.add({
+                  'key': 'Content-Type',
+                  'value': 'application/json',
+                  'enabled': 'true'
+                });
+                if (normalizedSchema != null) {
+                  final sample = _generateSampleFromSchema(normalizedSchema, data);
+                  if (sample != null) {
+                    body = const JsonEncoder.withIndent('  ').convert(sample);
+                  }
                 }
               }
             } else if (content.containsKey('application/x-www-form-urlencoded')) {
