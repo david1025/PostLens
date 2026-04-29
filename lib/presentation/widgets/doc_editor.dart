@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 import '../utils/markdown_quill_converter.dart';
 import 'app_code_editor.dart';
@@ -138,7 +139,9 @@ class _DocEditorState extends State<DocEditor> {
     return InkWell(
       onTap: () => _switchMarkdownViewMode(mode),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+        height: double.infinity,
+        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
         decoration: BoxDecoration(
           border: Border(
             bottom: BorderSide(
@@ -208,6 +211,7 @@ class _DocEditorState extends State<DocEditor> {
             children: [
               // Header Row
               Container(
+                height: 36,
                 decoration: BoxDecoration(
                   color: Theme.of(context).colorScheme.surface,
                   border: Border(
@@ -225,6 +229,7 @@ class _DocEditorState extends State<DocEditor> {
                               child: QuillSimpleToolbar(
                                 controller: _quillController,
                                 config: QuillSimpleToolbarConfig(
+                                  toolbarSize: 28,
                                   multiRowsDisplay: false,
                                   showFontFamily: false,
                                   showFontSize: false,
@@ -255,6 +260,17 @@ class _DocEditorState extends State<DocEditor> {
                                         ),
                                       ),
                                     ),
+                                    selectHeaderStyleDropdownButton: const QuillToolbarSelectHeaderStyleDropdownButtonOptions(
+                                      attributes: [
+                                        Attribute.header,
+                                        Attribute.h1,
+                                        Attribute.h2,
+                                        Attribute.h3,
+                                        Attribute.h4,
+                                        Attribute.h5,
+                                        Attribute.h6,
+                                      ],
+                                    ),
                                   ),
                                 ),
                               ),
@@ -275,31 +291,41 @@ class _DocEditorState extends State<DocEditor> {
                       color: Theme.of(context).dividerColor,
                       margin: const EdgeInsets.symmetric(horizontal: 8),
                     ),
-                    DropdownButtonHideUnderline(
-                      child: DropdownButton<DocEditorMode>(
-                        value: _mode,
-                        icon: const Icon(Icons.keyboard_arrow_down, size: 16),
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Theme.of(context).textTheme.bodyMedium?.color,
+                    PopupMenuButton<DocEditorMode>(
+                      tooltip: 'Select Editor Mode',
+                      position: PopupMenuPosition.under,
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      splashRadius: 16,
+                      onSelected: _switchMode,
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: DocEditorMode.richText,
+                          height: 32,
+                          child: Text(widget.richTextLabel, style: const TextStyle(fontSize: 12)),
                         ),
-                        isDense: true,
-                        items: [
-                          DropdownMenuItem(
-                            value: DocEditorMode.richText,
-                            child: Text(widget.richTextLabel),
-                          ),
-                          DropdownMenuItem(
-                            value: DocEditorMode.markdown,
-                            child: Text(widget.markdownLabel),
-                          ),
-                        ],
-                        onChanged: (mode) {
-                          if (mode != null) _switchMode(mode);
-                        },
+                        PopupMenuItem(
+                          value: DocEditorMode.markdown,
+                          height: 32,
+                          child: Text(widget.markdownLabel, style: const TextStyle(fontSize: 12)),
+                        ),
+                      ],
+                      child: SizedBox(
+                        height: 20,
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _mode == DocEditorMode.richText ? widget.richTextLabel : widget.markdownLabel,
+                              style: const TextStyle(color: Colors.blue, fontSize: 12),
+                            ),
+                            const SizedBox(width: 4),
+                            const FaIcon(FontAwesomeIcons.chevronDown, size: 10, color: Colors.blue),
+                          ],
+                        ),
                       ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 12),
                   ],
                 ),
               ),
