@@ -42,6 +42,6 @@ class ToastUtils {
   }
 
   static void showInfo(BuildContext context, String message) {
-    show(context, message, type: ToastificationType.success);
+    show(context, message, type: ToastificationType.info);
   }
 }
