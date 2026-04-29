@@ -10,13 +10,25 @@ enum DocEditorMode { richText, markdown }
 enum MarkdownViewMode { edit, preview }
 
 class DocEditor extends StatefulWidget {
+  final String? title;
   final String value;
   final ValueChanged<String> onChanged;
+  final String richTextLabel;
+  final String markdownLabel;
+  final String editLabel;
+  final String previewLabel;
+  final bool hideToolbarWhenUnfocused;
 
   const DocEditor({
     super.key,
+    this.title,
     required this.value,
     required this.onChanged,
+    this.richTextLabel = 'Rich Text',
+    this.markdownLabel = 'Markdown',
+    this.editLabel = 'Edit',
+    this.previewLabel = 'Preview',
+    this.hideToolbarWhenUnfocused = true,
   });
 
   @override
@@ -31,6 +43,8 @@ class _DocEditorState extends State<DocEditor> {
   MarkdownViewMode _markdownViewMode = MarkdownViewMode.edit;
   late String _markdown;
   late QuillController _quillController;
+  late FocusNode _richFocusNode;
+  var _toolbarHovering = false;
   Timer? _debounce;
 
   @override
@@ -42,6 +56,11 @@ class _DocEditorState extends State<DocEditor> {
       selection: const TextSelection.collapsed(offset: 0),
     );
     _quillController.addListener(_onQuillChanged);
+    _richFocusNode = FocusNode();
+    _richFocusNode.addListener(() {
+      if (!mounted) return;
+      setState(() {});
+    });
   }
 
   @override
@@ -61,6 +80,7 @@ class _DocEditorState extends State<DocEditor> {
     _debounce?.cancel();
     _quillController.removeListener(_onQuillChanged);
     _quillController.dispose();
+    _richFocusNode.dispose();
     super.dispose();
   }
 
@@ -98,10 +118,9 @@ class _DocEditorState extends State<DocEditor> {
     setState(() {
       _mode = mode;
       if (_mode == DocEditorMode.richText) {
-        _markdownViewMode = MarkdownViewMode.edit;
-      }
-      if (_mode == DocEditorMode.richText) {
         _resetQuillFromMarkdown();
+      } else {
+        _markdownViewMode = MarkdownViewMode.edit;
       }
     });
   }
@@ -131,47 +150,86 @@ class _DocEditorState extends State<DocEditor> {
       ),
     );
 
+    final segmentedStyle = ButtonStyle(
+      padding: WidgetStateProperty.all(
+        const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      ),
+      textStyle: WidgetStateProperty.all(
+        const TextStyle(fontSize: 12),
+      ),
+      visualDensity: VisualDensity.compact,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    );
+
+    final showToolbar = _mode == DocEditorMode.richText &&
+        (!widget.hideToolbarWhenUnfocused ||
+            _richFocusNode.hasFocus ||
+            _toolbarHovering);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            SegmentedButton<DocEditorMode>(
-              segments: const [
-                ButtonSegment(
-                  value: DocEditorMode.richText,
-                  label: Text('Rich Text'),
+            if (widget.title != null) ...[
+              Text(
+                widget.title!,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.grey,
                 ),
-                ButtonSegment(
-                  value: DocEditorMode.markdown,
-                  label: Text('Markdown'),
-                ),
-              ],
-              selected: {_mode},
-              onSelectionChanged: (s) => _switchMode(s.first),
-              showSelectedIcon: false,
-            ),
-            if (_mode == DocEditorMode.markdown) ...[
-              const SizedBox(width: 12),
-              SegmentedButton<MarkdownViewMode>(
-                segments: const [
-                  ButtonSegment(
-                    value: MarkdownViewMode.edit,
-                    label: Text('Edit'),
-                  ),
-                  ButtonSegment(
-                    value: MarkdownViewMode.preview,
-                    label: Text('Preview'),
-                  ),
-                ],
-                selected: {_markdownViewMode},
-                onSelectionChanged: (s) => _switchMarkdownViewMode(s.first),
-                showSelectedIcon: false,
               ),
+              const SizedBox(width: 12),
             ],
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    SegmentedButton<DocEditorMode>(
+                      style: segmentedStyle,
+                      segments: [
+                        ButtonSegment(
+                          value: DocEditorMode.richText,
+                          label: Text(widget.richTextLabel),
+                        ),
+                        ButtonSegment(
+                          value: DocEditorMode.markdown,
+                          label: Text(widget.markdownLabel),
+                        ),
+                      ],
+                      selected: {_mode},
+                      onSelectionChanged: (s) => _switchMode(s.first),
+                      showSelectedIcon: false,
+                    ),
+                    if (_mode == DocEditorMode.markdown)
+                      SegmentedButton<MarkdownViewMode>(
+                        style: segmentedStyle,
+                        segments: [
+                          ButtonSegment(
+                            value: MarkdownViewMode.edit,
+                            label: Text(widget.editLabel),
+                          ),
+                          ButtonSegment(
+                            value: MarkdownViewMode.preview,
+                            label: Text(widget.previewLabel),
+                          ),
+                        ],
+                        selected: {_markdownViewMode},
+                        onSelectionChanged: (s) =>
+                            _switchMarkdownViewMode(s.first),
+                        showSelectedIcon: false,
+                      ),
+                  ],
+                ),
+              ),
+            ),
           ],
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 12),
         Container(
           height: 360,
           decoration: BoxDecoration(
@@ -211,33 +269,41 @@ class _DocEditorState extends State<DocEditor> {
                     )
               : Column(
                   children: [
-                    DefaultTextStyle.merge(
-                      style: const TextStyle(fontSize: _contentFontSize),
-                      child: QuillSimpleToolbar(
-                        controller: _quillController,
-                        config: const QuillSimpleToolbarConfig(
-                          toolbarSize: 32,
-                          iconTheme: QuillIconTheme(
-                            iconButtonUnselectedData: IconButtonData(
-                              iconSize: 18,
-                              padding: EdgeInsets.zero,
-                              constraints:
-                                  BoxConstraints.tightFor(width: 32, height: 32),
-                            ),
-                            iconButtonSelectedData: IconButtonData(
-                              iconSize: 18,
-                              padding: EdgeInsets.zero,
-                              constraints:
-                                  BoxConstraints.tightFor(width: 32, height: 32),
+                    if (showToolbar) ...[
+                      DefaultTextStyle.merge(
+                        style: const TextStyle(fontSize: _contentFontSize),
+                        child: MouseRegion(
+                          onEnter: (_) => setState(() => _toolbarHovering = true),
+                          onExit: (_) =>
+                              setState(() => _toolbarHovering = false),
+                          child: QuillSimpleToolbar(
+                            controller: _quillController,
+                            config: const QuillSimpleToolbarConfig(
+                              toolbarSize: 32,
+                              iconTheme: QuillIconTheme(
+                                iconButtonUnselectedData: IconButtonData(
+                                  iconSize: 18,
+                                  padding: EdgeInsets.zero,
+                                  constraints: BoxConstraints.tightFor(
+                                      width: 32, height: 32),
+                                ),
+                                iconButtonSelectedData: IconButtonData(
+                                  iconSize: 18,
+                                  padding: EdgeInsets.zero,
+                                  constraints: BoxConstraints.tightFor(
+                                      width: 32, height: 32),
+                                ),
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    Divider(height: 1, color: Theme.of(context).dividerColor),
+                      Divider(height: 1, color: Theme.of(context).dividerColor),
+                    ],
                     Expanded(
                       child: QuillEditor.basic(
                         controller: _quillController,
+                        focusNode: _richFocusNode,
                         config: QuillEditorConfig(
                           autoFocus: false,
                           expands: true,
