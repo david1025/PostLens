@@ -1077,11 +1077,11 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
 
     return MultiSplitViewTheme(
       data: MultiSplitViewThemeData(
-        dividerThickness: 1,
+        dividerThickness: 0,
         dividerHandleBuffer: 10,
         dividerPainter: DividerPainters.background(
-          color: Theme.of(context).dividerColor,
-          highlightedColor: Theme.of(context).colorScheme.primary,
+          color: Colors.transparent,
+          highlightedColor: Colors.transparent,
         ),
       ),
       child: Padding(
@@ -1091,7 +1091,15 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
           controller: _workspaceSplitController,
           builder: (BuildContext context, Area area) {
             if (area.index == 0) {
-              return RequestPane(key: ValueKey('request_${activeRequest.id}'));
+              return DecoratedBox(
+                decoration: BoxDecoration(
+                  border: Border(
+                    bottom:
+                        BorderSide(color: Theme.of(context).dividerColor),
+                  ),
+                ),
+                child: RequestPane(key: ValueKey('request_${activeRequest.id}')),
+              );
             }
             return ResponsePane(key: ValueKey('response_${activeRequest.id}'));
           },
@@ -1978,5 +1986,4 @@ enum _TabContextMenuAction {
   closeAllTabs,
   forceCloseAllTabs,
 }
-
 
