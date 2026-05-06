@@ -43,3 +43,19 @@ class ImportIntent extends Intent {
 class FocusRequestUrlIntent extends Intent {
   const FocusRequestUrlIntent();
 }
+
+class OpenWorkspaceOverviewIntent extends Intent {
+  const OpenWorkspaceOverviewIntent();
+}
+
+class OpenBreadcrumbOverviewIntent extends Intent {
+  final String? collectionId;
+  final List<String> folderPath;
+  final int depth;
+
+  const OpenBreadcrumbOverviewIntent({
+    required this.collectionId,
+    required this.folderPath,
+    required this.depth,
+  });
+}

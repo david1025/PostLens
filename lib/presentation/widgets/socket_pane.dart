@@ -7,6 +7,7 @@ import 'shared_dynamic_table.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:socket_io_client/socket_io_client.dart' as IO;
 
+import '../../core/intents.dart';
 import '../providers/request_provider.dart';
 import '../providers/settings_provider.dart';
 import 'save_request_dialog.dart';
@@ -470,24 +471,95 @@ class _SocketPaneState extends ConsumerState<SocketPane>
         Expanded(
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final maxNameWidth = (constraints.maxWidth * 0.28)
-                  .clamp(140.0, 320.0)
+              final maxNameWidth = (constraints.maxWidth * 0.20)
+                  .clamp(120.0, 260.0)
                   .toDouble();
               return Row(
                 children: [
                   if (request.folderPath != null &&
                       request.folderPath!.isNotEmpty) ...[
-                    const FaIcon(FontAwesomeIcons.networkWired,
-                        size: 12, color: Colors.blue),
+                    InkWell(
+                      onTap: () {
+                        final collectionId = request.collectionId;
+                        if (collectionId != null && collectionId.isNotEmpty) {
+                          Actions.invoke(
+                            context,
+                            OpenBreadcrumbOverviewIntent(
+                              collectionId: collectionId,
+                              folderPath: request.folderPath ?? const [],
+                              depth: -1,
+                            ),
+                          );
+                        } else {
+                          Actions.invoke(
+                            context,
+                            const OpenWorkspaceOverviewIntent(),
+                          );
+                        }
+                      },
+                      child: const FaIcon(FontAwesomeIcons.networkWired,
+                          size: 12, color: Colors.blue),
+                    ),
                     const SizedBox(width: 8),
                     Flexible(
-                      child: Text(
-                        request.folderPath!.join(' › '),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        softWrap: false,
-                        style:
-                            const TextStyle(fontSize: 12, color: Colors.grey),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            for (int i = 0;
+                                i < request.folderPath!.length;
+                                i++) ...[
+                              if (i != 0)
+                                const Padding(
+                                  padding:
+                                      EdgeInsets.symmetric(horizontal: 4.0),
+                                  child: Text('›',
+                                      style: TextStyle(
+                                          color: Colors.grey, fontSize: 12)),
+                                ),
+                              InkWell(
+                                onTap: () {
+                                  final collectionId = request.collectionId;
+                                  if (collectionId == null ||
+                                      collectionId.isEmpty) {
+                                    Actions.invoke(
+                                      context,
+                                      const OpenWorkspaceOverviewIntent(),
+                                    );
+                                    return;
+                                  }
+                                  Actions.invoke(
+                                    context,
+                                    OpenBreadcrumbOverviewIntent(
+                                      collectionId: collectionId,
+                                      folderPath:
+                                          request.folderPath ?? const [],
+                                      depth: i,
+                                    ),
+                                  );
+                                },
+                                child: Text(
+                                  request.folderPath![i],
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: i ==
+                                            request.folderPath!.length - 1
+                                        ? Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium!
+                                            .color
+                                        : Colors.grey,
+                                    fontWeight: i ==
+                                            request.folderPath!.length - 1
+                                        ? FontWeight.w600
+                                        : FontWeight.normal,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
                       ),
                     ),
                     const SizedBox(width: 8),

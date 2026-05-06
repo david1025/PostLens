@@ -13,6 +13,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/intents.dart';
 import '../../domain/models/http_request_model.dart';
+import '../../domain/models/collection_model.dart';
 import '../../data/local/database_helper.dart';
 import '../widgets/header_bar.dart';
 import '../widgets/settings_dialog.dart';
@@ -42,6 +43,7 @@ import '../providers/console_provider.dart';
 import '../providers/settings_provider.dart';
 import '../providers/ui_provider.dart';
 import '../providers/capture_provider.dart';
+import '../providers/collection_provider.dart';
 import '../providers/environment_provider.dart';
 import '../../domain/models/environment_model.dart';
 import 'home_page_widgets.dart';
@@ -761,6 +763,59 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
     _persistTabsToDatabase();
   }
 
+  CollectionFolder? _findFolderByPath(
+    CollectionModel collection,
+    List<String> path,
+    int depth,
+  ) {
+    List<CollectionNode> nodes = collection.children;
+    CollectionFolder? current;
+    for (int i = 0; i <= depth && i < path.length; i++) {
+      final name = path[i];
+      current = nodes.whereType<CollectionFolder>().firstWhere(
+            (f) => f.name == name,
+            orElse: () => CollectionFolder(
+              id: '',
+              name: '',
+              children: const [],
+              description: '',
+            ),
+          );
+      if (current.id.isEmpty) return null;
+      nodes = current.children;
+    }
+    return current;
+  }
+
+  void _openBreadcrumbOverview(OpenBreadcrumbOverviewIntent intent) {
+    final collectionId = intent.collectionId;
+    if (collectionId == null || collectionId.isEmpty) {
+      _openOverviewTab();
+      return;
+    }
+
+    final collections = ref.read(activeWorkspaceCollectionsProvider);
+    final collection = collections.where((c) => c.id == collectionId).firstOrNull;
+    if (collection == null) {
+      _openOverviewTab();
+      return;
+    }
+
+    if (intent.depth < 0) {
+      _openCollectionInTab(collection.id, false, collection.name);
+      return;
+    }
+
+    final folder =
+        _findFolderByPath(collection, intent.folderPath, intent.depth);
+    if (folder == null) {
+      _openCollectionInTab(collection.id, false, collection.name);
+      return;
+    }
+
+    _openCollectionInTab(folder.id, true, folder.name);
+  }
+
   void _addProtocolTab({
     required String protocol,
     required String method,
@@ -889,6 +944,12 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
               onInvoke: (intent) => _openSettings()),
           SearchIntent:
               CallbackAction<SearchIntent>(onInvoke: (intent) => _openSearch()),
+          OpenWorkspaceOverviewIntent:
+              CallbackAction<OpenWorkspaceOverviewIntent>(
+                  onInvoke: (intent) => _openOverviewTab()),
+          OpenBreadcrumbOverviewIntent:
+              CallbackAction<OpenBreadcrumbOverviewIntent>(
+                  onInvoke: (intent) => _openBreadcrumbOverview(intent)),
         },
         child: Focus(
           autofocus: true,
