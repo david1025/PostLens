@@ -1,6 +1,11 @@
 import 'dart:io';
 
 class SystemProxyService {
+  List<String>? _cachedInterfaces;
+
+  List<String> _getFallbackInterfaces() {
+    return ['Wi-Fi', 'Ethernet'];
+  }
   Future<void> setSystemHttpProxy(
       {required String host, required int port}) async {
     final proxyServer = '$host:$port';
@@ -111,16 +116,16 @@ class SystemProxyService {
       return;
     } else if (Platform.isMacOS) {
       final interfaces = await _getActiveMacInterfaces();
+      final futures = <Future>[];
       for (final iface in interfaces) {
-        try {
-          await _runCommand(
-              'networksetup', ['-setwebproxystate', iface, 'off']);
-          await _runCommand(
-              'networksetup', ['-setsecurewebproxystate', iface, 'off']);
-        } catch (_) {
-          // Ignore cleanup failures so stop() can still complete.
-        }
+        futures.add(
+            _runCommand('networksetup', ['-setwebproxystate', iface, 'off'])
+                .catchError((_) {}));
+        futures.add(
+            _runCommand('networksetup', ['-setsecurewebproxystate', iface, 'off'])
+                .catchError((_) {}));
       }
+      await Future.wait(futures);
       return;
     } else if (Platform.isLinux) {
       try {
@@ -269,11 +274,13 @@ class SystemProxyService {
           interfaces.add(line);
         }
         if (interfaces.isNotEmpty) {
+          _cachedInterfaces = interfaces;
           return interfaces;
         }
       }
     } catch (_) {}
-    return ['Wi-Fi', 'Ethernet'];
+    final fallback = _cachedInterfaces ?? _getFallbackInterfaces();
+    return fallback;
   }
 
   Future<bool> _isExpectedMacProxyEnabled({

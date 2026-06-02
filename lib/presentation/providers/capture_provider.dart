@@ -369,6 +369,10 @@ class CaptureNotifier extends StateNotifier<CaptureState> {
     await stop();
   }
 
+  Future<void> stopCaptureForClose() async {
+    await stop();
+  }
+
   void _onSession(CaptureSessionModel session) {
     final newList = List<CaptureSessionModel>.from(state.sessions);
     final existingIndex = newList.indexWhere((s) => s.id == session.id);

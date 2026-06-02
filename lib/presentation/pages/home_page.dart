@@ -190,42 +190,47 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
 
   @override
   void onWindowClose() async {
-    // Tab state is persisted while editing; closing should not trigger encoding.
     _persistTimer?.cancel();
+    _saveActiveRequestState();
+    await _persistTabsToDatabase();
 
-    // 濡傛灉鎶撳寘鏈嶅姟姝ｅ湪杩愯锛屽厛寮瑰嚭纭瀵硅瘽妗?
     final captureState = ref.read(captureProvider);
     if (captureState.isRunning) {
       final shouldClose = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('鎶撳寘鏈嶅姟姝ｅ湪杩愯'),
-          content: const Text('鍏抽棴绐楀彛灏嗗仠姝㈡姄鍖呮湇鍔″苟鎭㈠绯荤粺浠ｇ悊璁剧疆銆傛槸鍚︾户缁叧闂紵'),
+          title: const Text('Stop Capture'),
+          content: const Text(
+              'Closing the window will stop the capture service and restore system proxy settings. Continue?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('鍙栨秷'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('纭鍏抽棴'),
+              child: const Text('Stop and Close'),
             ),
           ],
         ),
       );
 
       if (shouldClose != true) {
-        return; // 鐢ㄦ埛鍙栨秷锛屼笉鍏抽棴绐楀彛
+        return;
       }
 
       try {
-        await ref.read(captureProvider.notifier).stopCapture();
+        await ref.read(captureProvider.notifier).stopCaptureForClose();
       } catch (e) {
-        // 鍗充娇鍋滄澶辫触涔熺户缁叧闂?
+        final isPreventClose = await windowManager.isPreventClose();
+        if (isPreventClose) {
+          await windowManager.destroy();
+        }
+        return;
       }
     }
 
-    bool isPreventClose = await windowManager.isPreventClose();
+    final isPreventClose = await windowManager.isPreventClose();
     if (isPreventClose) {
       await windowManager.destroy();
     }
