@@ -544,7 +544,7 @@ class CapturePaneState extends ConsumerState<CapturePane> {
     required BuildContext context,
     required String label,
     String? iconPath,
-    IconData? icon,
+    FaIconData? icon,
     required bool isSelected,
     required VoidCallback onTap,
   }) {
@@ -1621,7 +1621,7 @@ class CapturePaneState extends ConsumerState<CapturePane> {
 
   Widget _buildActionButton({
     required String label,
-    required IconData icon,
+    required FaIconData icon,
     required Color color,
     required VoidCallback onTap,
   }) {
@@ -1651,7 +1651,7 @@ class CapturePaneState extends ConsumerState<CapturePane> {
   }
 
   Widget _buildIconAction({
-    required IconData icon,
+    required FaIconData icon,
     required String tooltip,
     required VoidCallback onTap,
     Color? color,

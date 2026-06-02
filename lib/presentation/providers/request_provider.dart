@@ -27,6 +27,7 @@ class RequestNotifier extends StateNotifier<HttpRequestModel> {
   final Random _rand = Random();
   final Map<String, HttpRequestModel> _requestsById = {};
   final Map<String, String> _savedRequestSignatures = {};
+  bool _skipParamParsing = false;
 
   String _makeRowId() {
     return '${DateTime.now().microsecondsSinceEpoch}_${_rand.nextInt(1 << 32)}';
@@ -183,7 +184,19 @@ class RequestNotifier extends StateNotifier<HttpRequestModel> {
     }
   }
 
+  /// Set URL only (without parsing query params), used for real-time draft param preview.
+  void setUrlOnly(String url) {
+    _skipParamParsing = true;
+    _setState(state.copyWith(url: url));
+  }
+
   void updateUrl(String url) {
+    if (_skipParamParsing) {
+      _skipParamParsing = false;
+      _setState(state.copyWith(url: url));
+      return;
+    }
+
     final parts = url.split('?');
 
     // Extract current parameters from state

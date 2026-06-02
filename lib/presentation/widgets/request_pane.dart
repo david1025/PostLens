@@ -268,6 +268,42 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     if (index == _draftParamRows.length - 1 && !row.isEmpty) {
       setState(_ensureTrailingDraftParamRow);
     }
+    _syncUrlFromDraftParams();
+  }
+
+  void _syncUrlFromDraftParams() {
+    final newUrl = _buildUrlFromDraftParams();
+    final currentUrl = ref.read(requestProvider).url;
+    if (newUrl != currentUrl) {
+      ref.read(requestProvider.notifier).setUrlOnly(newUrl);
+    }
+  }
+
+  String _buildUrlFromDraftParams() {
+    final request = ref.read(requestProvider);
+    final baseUrl = request.url.split('?').first;
+    final queryParts = <String>[];
+
+    // Add committed params
+    for (var p in request.params) {
+      if ((p['enabled'] ?? 'true') == 'true' &&
+          (p['key']?.isNotEmpty ?? false)) {
+        final key = Uri.encodeQueryComponent(p['key']!);
+        final value = Uri.encodeQueryComponent(p['value'] ?? '');
+        queryParts.add('$key=$value');
+      }
+    }
+
+    // Add draft params
+    for (var row in _draftParamRows) {
+      if (row.keyController.text.isNotEmpty) {
+        final key = Uri.encodeQueryComponent(row.keyController.text.trim());
+        final value = Uri.encodeQueryComponent(row.valueController.text);
+        queryParts.add('$key=$value');
+      }
+    }
+
+    return queryParts.isEmpty ? baseUrl : '$baseUrl?${queryParts.join('&')}';
   }
 
   void _commitDraftParamRow(String id, {bool focusNext = false}) {
@@ -1254,7 +1290,7 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     }
   }
 
-  IconData _getProtocolIcon(String protocol) {
+  FaIconData _getProtocolIcon(String protocol) {
     switch (protocol.toLowerCase()) {
       case 'grpc':
         return FontAwesomeIcons.server;

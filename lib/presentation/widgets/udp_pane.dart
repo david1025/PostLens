@@ -627,7 +627,7 @@ class _UdpPaneState extends ConsumerState<UdpPane>
     );
   }
 
-  IconData _getProtocolIcon(String protocol) {
+  FaIconData _getProtocolIcon(String protocol) {
     switch (protocol.toLowerCase()) {
       case 'grpc':
         return FontAwesomeIcons.server;

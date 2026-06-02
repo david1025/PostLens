@@ -614,7 +614,7 @@ class _SearchDropdownContentState
                   ),
                   child: Center(
                     child: item['type'] != 'request'
-                        ? Icon(item['icon'], size: 14, color: item['iconColor'])
+                        ? FaIcon(item['icon'], size: 14, color: item['iconColor'])
                         : Text(item['method'],
                             style: TextStyle(
                                 fontSize: 9,
@@ -860,16 +860,14 @@ class _WorkspaceDropdownContentState
 }
 
 class _HoverIconButton extends StatefulWidget {
-  final IconData icon;
+  final FaIconData icon;
   final String tooltip;
   final VoidCallback onPressed;
-  final bool isFa;
 
   const _HoverIconButton({
     required this.icon,
     required this.tooltip,
     required this.onPressed,
-    this.isFa = false,
   });
 
   @override
@@ -887,21 +885,13 @@ class _HoverIconButtonState extends State<_HoverIconButton> {
       child: Tooltip(
         message: widget.tooltip,
         child: IconButton(
-          icon: widget.isFa
-              ? FaIcon(
-                  widget.icon,
-                  size: 14,
-                  color: _isHovered
-                      ? Theme.of(context).textTheme.bodyMedium!.color
-                      : Colors.grey,
-                )
-              : Icon(
-                  widget.icon,
-                  size: 16,
-                  color: _isHovered
-                      ? Theme.of(context).textTheme.bodyMedium!.color
-                      : Colors.grey,
-                ),
+          icon: FaIcon(
+            widget.icon,
+            size: 14,
+            color: _isHovered
+                ? Theme.of(context).textTheme.bodyMedium!.color
+                : Colors.grey,
+          ),
           onPressed: widget.onPressed,
           splashRadius: 20,
         ),

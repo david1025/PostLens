@@ -100,7 +100,7 @@ class StatusBar extends ConsumerWidget {
   }
 
   Widget _buildStatusItem(
-    IconData icon,
+    FaIconData icon,
     String label, {
     bool iconRight = false,
     VoidCallback? onTap,
@@ -112,13 +112,13 @@ class StatusBar extends ConsumerWidget {
       child: Row(
         children: [
           if (!iconRight) ...[
-            Icon(icon, size: 12, color: itemColor),
+            FaIcon(icon, size: 12, color: itemColor),
             const SizedBox(width: 4),
           ],
           Text(label, style: TextStyle(fontSize: 10, color: itemColor)),
           if (iconRight) ...[
             const SizedBox(width: 4),
-            Icon(icon, size: 12, color: itemColor),
+            FaIcon(icon, size: 12, color: itemColor),
           ],
         ],
       ),

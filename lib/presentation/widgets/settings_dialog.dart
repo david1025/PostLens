@@ -128,7 +128,7 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
                       ),
                       child: Row(
                         children: [
-                          Icon(tab['icon'],
+                          FaIcon(tab['icon'],
                               size: 14,
                               color: isSelected
                                   ? Theme.of(context)
@@ -545,7 +545,7 @@ class _SettingsDialogState extends ConsumerState<SettingsDialog> {
           child: Column(
             children: [
               const SizedBox(height: 48),
-              Icon(FontAwesomeIcons.rocket,
+              FaIcon(FontAwesomeIcons.rocket,
                   size: 64, color: Theme.of(context).colorScheme.secondary),
               const SizedBox(height: 24),
               Text(t['postlens'] ?? 'PostLens',

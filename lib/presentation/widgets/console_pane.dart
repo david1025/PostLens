@@ -308,7 +308,7 @@ class _ConsolePaneState extends ConsumerState<ConsolePane> {
   }
 
   Widget _buildActionIcon({
-    required IconData icon,
+    required FaIconData icon,
     required String tooltip,
     required VoidCallback onTap,
   }) {
@@ -331,7 +331,7 @@ class _ConsolePaneState extends ConsumerState<ConsolePane> {
 
   Widget _buildLogItem(ConsoleLog log, bool isDark) {
     Color? bgColor;
-    IconData? levelIcon;
+    FaIconData? levelIcon;
     Color? iconColor;
 
     switch (log.level) {

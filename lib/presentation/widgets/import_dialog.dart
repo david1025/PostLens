@@ -266,7 +266,7 @@ class _ImportDialogState extends ConsumerState<ImportDialog> {
                         if (_isLoading)
                           const CircularProgressIndicator()
                         else ...[
-                          Icon(
+                          FaIcon(
                             FontAwesomeIcons.fileArrowDown,
                             size: 32,
                             color: Colors.grey.shade600,

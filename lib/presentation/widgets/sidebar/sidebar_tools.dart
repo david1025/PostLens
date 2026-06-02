@@ -33,7 +33,7 @@ extension SidebarToolsExt on _SidebarState {
                     AnimatedRotation(
                       turns: controller.isExpanded ? 0 : -0.25,
                       duration: const Duration(milliseconds: 200),
-                      child: const Icon(
+                      child: const FaIcon(
                         FontAwesomeIcons.chevronDown,
                         size: 10,
                         color: Colors.grey,

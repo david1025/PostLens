@@ -751,7 +751,7 @@ class _ResponsePaneState extends ConsumerState<ResponsePane>
   }
 
   Widget _buildStatusItem(String label, String value, Color valueColor,
-      {IconData? icon, bool showDot = true, Widget? tooltip}) {
+      {FaIconData? icon, bool showDot = true, Widget? tooltip}) {
     Widget content = Row(
       mainAxisSize: MainAxisSize.min,
       children: [

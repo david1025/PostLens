@@ -756,7 +756,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
     }
   }
 
-  Widget _buildTabIcon(int index, IconData icon, String tooltip) {
+  Widget _buildTabIcon(int index, FaIconData icon, String tooltip) {
     final theme = Theme.of(context);
     final isSelected = _selectedTab == index;
     final hoverBackgroundColor = theme.brightness == Brightness.dark
@@ -810,7 +810,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
     );
   }
 
-  Widget _buildBottomIcon(IconData icon,
+  Widget _buildBottomIcon(FaIconData icon,
       {required String tooltip, required VoidCallback onTap}) {
     final theme = Theme.of(context);
     final hoverBackgroundColor = theme.brightness == Brightness.dark
@@ -909,7 +909,7 @@ class _SidebarState extends ConsumerState<Sidebar> {
                           AnimatedRotation(
                             turns: controller.isExpanded ? 0.25 : 0,
                             duration: const Duration(milliseconds: 200),
-                            child: const Icon(
+                            child: const FaIcon(
                               FontAwesomeIcons.chevronRight,
                               size: 9,
                               color: Colors.grey,

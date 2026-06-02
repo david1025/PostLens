@@ -489,7 +489,7 @@ class _WebSocketPaneState extends ConsumerState<WebSocketPane>
     );
   }
 
-  IconData _getProtocolIcon(String protocol) {
+  FaIconData _getProtocolIcon(String protocol) {
     switch (protocol.toLowerCase()) {
       case 'grpc':
         return FontAwesomeIcons.server;

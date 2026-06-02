@@ -570,7 +570,7 @@ class _TcpPaneState extends ConsumerState<TcpPane>
     );
   }
 
-  IconData _getProtocolIcon(String protocol) {
+  FaIconData _getProtocolIcon(String protocol) {
     switch (protocol.toLowerCase()) {
       case 'grpc':
         return FontAwesomeIcons.server;

@@ -316,6 +316,9 @@ class _CodeInputController extends ChangeNotifier
       TextInputControl? oldControl, TextInputControl? newControl) {}
 
   @override
+  bool onFocusReceived() => false;
+
+  @override
   void performSelector(String selectorName) {}
 
   @override

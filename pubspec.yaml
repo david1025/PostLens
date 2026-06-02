@@ -29,7 +29,7 @@ dependencies:
   # Routing
   go_router: ^12.1.1
   # UI & Styling
-  font_awesome_flutter: ^10.7.0
+  font_awesome_flutter: ^11.0.0
   google_fonts: ^6.1.0
   flutter_svg: ^2.0.9
   multi_split_view: ^3.1.2
@@ -60,7 +60,7 @@ dependencies:
   flutter_rust_bridge: 2.12.0
   toastification: ^3.2.0
   flutter_js: ^0.8.7
-  flutter_quill: ^11.4.2
+  flutter_quill: ^11.5.1
 
 dev_dependencies:
   flutter_test:
