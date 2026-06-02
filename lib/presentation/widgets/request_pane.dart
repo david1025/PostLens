@@ -25,6 +25,7 @@ import '../../domain/services/collection_variables_service.dart';
 import '../../domain/models/collection_model.dart';
 import '../providers/collection_provider.dart';
 import 'app_code_editor.dart';
+import 'app_breadcrumb.dart';
 import 'doc_editor.dart';
 import 'hover_overlay.dart';
 import 'script_snippets_overlay.dart';
@@ -86,12 +87,15 @@ class _RequestPaneState extends ConsumerState<RequestPane>
   final TextEditingController _urlController = TextEditingController();
   final FocusNode _urlFocusNode = FocusNode();
   final TextEditingController _nameController = TextEditingController();
+  final FocusNode _nameFocusNode = FocusNode();
   final List<_DraftParamRow> _draftParamRows = [];
   int _draftParamRowCounter = 0;
   bool _showDefaultHeaders = false;
   bool _showBodySchema = false;
   bool _showBodyPreview = false;
   bool _isProtocolHovered = false;
+  bool _isNameHovered = false;
+  bool _isEditingName = false;
   String _selectedScriptSubTab = 'Pre-req';
   final GlobalKey<AppCodeEditorState> _scriptEditorKey =
       GlobalKey<AppCodeEditorState>();
@@ -108,6 +112,12 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     );
     _tabController.addListener(_handleTabChanged);
     _urlFocusNode.addListener(() => setState(() {}));
+    _nameFocusNode.addListener(() {
+      if (!mounted) return;
+      if (!_nameFocusNode.hasFocus && _isEditingName) {
+        setState(() => _isEditingName = false);
+      }
+    });
     _showDefaultHeaders = uiState.showDefaultHeaders;
     _showBodySchema = uiState.showBodySchema;
     _showBodyPreview = uiState.showBodyPreview;
@@ -121,10 +131,58 @@ class _RequestPaneState extends ConsumerState<RequestPane>
     _urlController.dispose();
     _urlFocusNode.dispose();
     _nameController.dispose();
+    _nameFocusNode.dispose();
     for (final row in _draftParamRows) {
       row.dispose();
     }
     super.dispose();
+  }
+
+  void _startEditingName() {
+    if (_isEditingName) return;
+    setState(() => _isEditingName = true);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _nameController.selection =
+          TextSelection.collapsed(offset: _nameController.text.length);
+      _nameFocusNode.requestFocus();
+    });
+  }
+
+  void _stopEditingName() {
+    if (!_isEditingName) return;
+    setState(() => _isEditingName = false);
+    _nameFocusNode.unfocus();
+  }
+
+  double _measureSingleLineTextWidth(
+    BuildContext context, {
+    required String text,
+    required TextStyle style,
+  }) {
+    final painter = TextPainter(
+      text: TextSpan(text: text, style: style),
+      maxLines: 1,
+      textDirection: Directionality.of(context),
+    )..layout();
+    return painter.size.width;
+  }
+
+  double _calculateNameEditorWidth(
+    BuildContext context, {
+    required String name,
+    required String hintText,
+    required TextStyle style,
+    required double maxWidth,
+  }) {
+    final text = name.trim().isEmpty ? hintText : name;
+    final textWidth = _measureSingleLineTextWidth(
+      context,
+      text: text,
+      style: style,
+    );
+    final width = textWidth + 24;
+    return width.clamp(80.0, maxWidth).toDouble();
   }
 
   void _handleTabChanged() {
@@ -627,102 +685,69 @@ class _RequestPaneState extends ConsumerState<RequestPane>
                                 .toDouble();
                             return Row(
                               children: [
-                                if (request.folderPath != null &&
-                                    request.folderPath!.isNotEmpty) ...[
-                                  InkWell(
-                                    onTap: () {
-                                      final collectionId = request.collectionId;
-                                      if (collectionId != null &&
-                                          collectionId.isNotEmpty) {
+                                if ((request.collectionId?.isNotEmpty ?? false) ||
+                                    (request.folderPath?.isNotEmpty ?? false)) ...[
+                                  Flexible(
+                                    child: AppBreadcrumb(
+                                      onRootTap: () {
+                                        final collectionId = request.collectionId;
+                                        if (collectionId == null ||
+                                            collectionId.isEmpty) {
+                                          Actions.invoke(
+                                            context,
+                                            const OpenWorkspaceOverviewIntent(),
+                                          );
+                                          return;
+                                        }
                                         Actions.invoke(
                                           context,
                                           OpenBreadcrumbOverviewIntent(
                                             collectionId: collectionId,
-                                            folderPath:
-                                                request.folderPath ?? const [],
+                                            folderPath: const [],
                                             depth: -1,
                                           ),
                                         );
-                                      } else {
-                                        Actions.invoke(
-                                          context,
-                                          const OpenWorkspaceOverviewIntent(),
-                                        );
-                                      }
-                                    },
-                                    child: const FaIcon(
-                                        FontAwesomeIcons.networkWired,
-                                        size: 12,
-                                        color: Colors.blue),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Flexible(
-                                    child: SingleChildScrollView(
-                                      scrollDirection: Axis.horizontal,
-                                      child: Row(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.center,
-                                        children: [
-                                          for (int i = 0;
-                                              i < request.folderPath!.length;
-                                              i++) ...[
-                                            if (i != 0)
-                                              const Padding(
-                                                padding: EdgeInsets.symmetric(
-                                                    horizontal: 4.0),
-                                                child: Text('›',
-                                                    style: TextStyle(
-                                                        color: Colors.grey,
-                                                        fontSize: 12)),
-                                              ),
-                                            InkWell(
-                                              onTap: () {
-                                                final collectionId =
-                                                    request.collectionId;
-                                                if (collectionId == null ||
-                                                    collectionId.isEmpty) {
-                                                  Actions.invoke(
-                                                    context,
-                                                    const OpenWorkspaceOverviewIntent(),
-                                                  );
-                                                  return;
-                                                }
+                                      },
+                                      items: [
+                                        for (int i = 0;
+                                            i <
+                                                (request.folderPath?.length ?? 0);
+                                            i++)
+                                          AppBreadcrumbItem(
+                                            label: request.folderPath![i],
+                                            onTap: () {
+                                              final collectionId =
+                                                  request.collectionId;
+                                              if (collectionId == null ||
+                                                  collectionId.isEmpty) {
                                                 Actions.invoke(
                                                   context,
-                                                  OpenBreadcrumbOverviewIntent(
-                                                    collectionId: collectionId,
-                                                    folderPath:
-                                                        request.folderPath ??
-                                                            const [],
-                                                    depth: i,
-                                                  ),
+                                                  const OpenWorkspaceOverviewIntent(),
                                                 );
-                                              },
-                                              child: Text(
-                                                request.folderPath![i],
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  color: i ==
-                                                          request.folderPath!
-                                                                  .length -
-                                                              1
-                                                      ? Theme.of(context)
-                                                          .textTheme
-                                                          .bodyMedium!
-                                                          .color
-                                                      : Colors.grey,
-                                                  fontWeight: i ==
-                                                          request.folderPath!
-                                                                  .length -
-                                                              1
-                                                      ? FontWeight.w600
-                                                      : FontWeight.normal,
+                                                return;
+                                              }
+                                              Actions.invoke(
+                                                context,
+                                                OpenBreadcrumbOverviewIntent(
+                                                  collectionId: collectionId,
+                                                  folderPath:
+                                                      request.folderPath ??
+                                                          const [],
+                                                  depth: i,
                                                 ),
-                                              ),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
+                                              );
+                                            },
+                                          ),
+                                        AppBreadcrumbItem(
+                                          label: request.name.isNotEmpty
+                                              ? request.name
+                                              : 'Request',
+                                          isCurrent: true,
+                                          onTap: () => ref
+                                              .read(requestProvider.notifier)
+                                              .loadRequest(request),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                   const SizedBox(width: 8),
@@ -807,50 +832,138 @@ class _RequestPaneState extends ConsumerState<RequestPane>
                                     ConstrainedBox(
                                       constraints: BoxConstraints(
                                           maxWidth: maxNameWidth),
-                                      child: TextField(
-                                        controller: _nameController,
-                                        maxLines: 1,
-                                        onChanged: (val) => ref
-                                            .read(requestProvider.notifier)
-                                            .updateName(val),
-                                        style: const TextStyle(fontSize: 12),
-                                        decoration: InputDecoration(
-                                          hintText: t['untitled_request'] ??
-                                              'Untitled Request',
-                                          filled: true,
-                                          fillColor: Theme.of(context)
-                                              .colorScheme
-                                              .surface,
-                                          border: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(4.0),
-                                            borderSide: BorderSide(
-                                                color: Colors.grey
-                                                    .withOpacity(0.5),
-                                                width: 1.0),
-                                          ),
-                                          enabledBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(4.0),
-                                            borderSide: BorderSide(
-                                                color: Colors.grey
-                                                    .withOpacity(0.5),
-                                                width: 1.0),
-                                          ),
-                                          focusedBorder: OutlineInputBorder(
-                                            borderRadius:
-                                                BorderRadius.circular(4.0),
-                                            borderSide: BorderSide(
-                                                color: Colors.grey
-                                                    .withOpacity(0.5),
-                                                width: 1.0),
-                                          ),
-                                          isDense: true,
-                                          contentPadding:
-                                              const EdgeInsets.fromLTRB(
-                                                  8, 7, 8, 7),
-                                        ),
-                                      ),
+                                      child: _isEditingName
+                                          ? SizedBox(
+                                              width: _calculateNameEditorWidth(
+                                                context,
+                                                name: request.name,
+                                                hintText:
+                                                    t['untitled_request'] ??
+                                                        'Untitled Request',
+                                                style: const TextStyle(
+                                                    fontSize: 12),
+                                                maxWidth: maxNameWidth,
+                                              ),
+                                              child: TextField(
+                                                focusNode: _nameFocusNode,
+                                                controller: _nameController,
+                                                autofocus: true,
+                                                maxLines: 1,
+                                                onChanged: (val) => ref
+                                                    .read(requestProvider
+                                                        .notifier)
+                                                    .updateName(val),
+                                                onSubmitted: (_) =>
+                                                    _stopEditingName(),
+                                                onEditingComplete:
+                                                    _stopEditingName,
+                                                style: const TextStyle(
+                                                    fontSize: 12),
+                                                decoration: InputDecoration(
+                                                  hintText:
+                                                      t['untitled_request'] ??
+                                                          'Untitled Request',
+                                                  filled: true,
+                                                  fillColor: Theme.of(context)
+                                                      .colorScheme
+                                                      .surface,
+                                                  border: OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4.0),
+                                                    borderSide: BorderSide(
+                                                        color: Colors.grey
+                                                            .withOpacity(0.5),
+                                                        width: 1.0),
+                                                  ),
+                                                  enabledBorder:
+                                                      OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4.0),
+                                                    borderSide: BorderSide(
+                                                        color: Colors.grey
+                                                            .withOpacity(0.5),
+                                                        width: 1.0),
+                                                  ),
+                                                  focusedBorder:
+                                                      OutlineInputBorder(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4.0),
+                                                    borderSide: BorderSide(
+                                                        color: Colors.grey
+                                                            .withOpacity(0.5),
+                                                        width: 1.0),
+                                                  ),
+                                                  isDense: true,
+                                                  contentPadding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          8, 7, 8, 7),
+                                                ),
+                                              ),
+                                            )
+                                          : MouseRegion(
+                                              onEnter: (_) => setState(() =>
+                                                  _isNameHovered = true),
+                                              onExit: (_) => setState(() =>
+                                                  _isNameHovered = false),
+                                              cursor:
+                                                  SystemMouseCursors.click,
+                                              child: GestureDetector(
+                                                behavior:
+                                                    HitTestBehavior.opaque,
+                                                onTap: _startEditingName,
+                                                child: AnimatedContainer(
+                                                  duration: const Duration(
+                                                      milliseconds: 120),
+                                                  padding:
+                                                      const EdgeInsets.fromLTRB(
+                                                          8, 7, 8, 7),
+                                                  decoration: BoxDecoration(
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            4.0),
+                                                    color: _isNameHovered
+                                                        ? Theme.of(context)
+                                                            .colorScheme
+                                                            .surface
+                                                        : Colors.transparent,
+                                                    border: _isNameHovered
+                                                        ? Border.all(
+                                                            color: Colors.grey
+                                                                .withOpacity(
+                                                                    0.5),
+                                                            width: 1.0,
+                                                          )
+                                                        : null,
+                                                  ),
+                                                  child: Text(
+                                                    (request.name
+                                                                .trim()
+                                                                .isEmpty
+                                                            ? (t['untitled_request'] ??
+                                                                'Untitled Request')
+                                                            : request.name)
+                                                        .trim(),
+                                                    maxLines: 1,
+                                                    overflow: TextOverflow
+                                                        .ellipsis,
+                                                    style: TextStyle(
+                                                      fontSize: 12,
+                                                      color: request.name
+                                                              .trim()
+                                                              .isEmpty
+                                                          ? Colors.grey
+                                                          : Theme.of(context)
+                                                              .textTheme
+                                                              .bodyMedium!
+                                                              .color,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
                                     ),
                                   ],
                                 ),

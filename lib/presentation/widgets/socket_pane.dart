@@ -10,6 +10,7 @@ import 'package:socket_io_client/socket_io_client.dart' as IO;
 import '../../core/intents.dart';
 import '../providers/request_provider.dart';
 import '../providers/settings_provider.dart';
+import 'app_breadcrumb.dart';
 import 'save_request_dialog.dart';
 import 'app_code_editor.dart';
 import 'package:post_lens/presentation/widgets/common/custom_controls.dart';
@@ -476,90 +477,64 @@ class _SocketPaneState extends ConsumerState<SocketPane>
                   .toDouble();
               return Row(
                 children: [
-                  if (request.folderPath != null &&
-                      request.folderPath!.isNotEmpty) ...[
-                    InkWell(
-                      onTap: () {
-                        final collectionId = request.collectionId;
-                        if (collectionId != null && collectionId.isNotEmpty) {
+                  if ((request.collectionId?.isNotEmpty ?? false) ||
+                      (request.folderPath?.isNotEmpty ?? false)) ...[
+                    Flexible(
+                      child: AppBreadcrumb(
+                        onRootTap: () {
+                          final collectionId = request.collectionId;
+                          if (collectionId == null || collectionId.isEmpty) {
+                            Actions.invoke(
+                              context,
+                              const OpenWorkspaceOverviewIntent(),
+                            );
+                            return;
+                          }
                           Actions.invoke(
                             context,
                             OpenBreadcrumbOverviewIntent(
                               collectionId: collectionId,
-                              folderPath: request.folderPath ?? const [],
+                              folderPath: const [],
                               depth: -1,
                             ),
                           );
-                        } else {
-                          Actions.invoke(
-                            context,
-                            const OpenWorkspaceOverviewIntent(),
-                          );
-                        }
-                      },
-                      child: const FaIcon(FontAwesomeIcons.networkWired,
-                          size: 12, color: Colors.blue),
-                    ),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            for (int i = 0;
-                                i < request.folderPath!.length;
-                                i++) ...[
-                              if (i != 0)
-                                const Padding(
-                                  padding:
-                                      EdgeInsets.symmetric(horizontal: 4.0),
-                                  child: Text('›',
-                                      style: TextStyle(
-                                          color: Colors.grey, fontSize: 12)),
-                                ),
-                              InkWell(
-                                onTap: () {
-                                  final collectionId = request.collectionId;
-                                  if (collectionId == null ||
-                                      collectionId.isEmpty) {
-                                    Actions.invoke(
-                                      context,
-                                      const OpenWorkspaceOverviewIntent(),
-                                    );
-                                    return;
-                                  }
+                        },
+                        items: [
+                          for (int i = 0;
+                              i < (request.folderPath?.length ?? 0);
+                              i++)
+                            AppBreadcrumbItem(
+                              label: request.folderPath![i],
+                              onTap: () {
+                                final collectionId = request.collectionId;
+                                if (collectionId == null ||
+                                    collectionId.isEmpty) {
                                   Actions.invoke(
                                     context,
-                                    OpenBreadcrumbOverviewIntent(
-                                      collectionId: collectionId,
-                                      folderPath:
-                                          request.folderPath ?? const [],
-                                      depth: i,
-                                    ),
+                                    const OpenWorkspaceOverviewIntent(),
                                   );
-                                },
-                                child: Text(
-                                  request.folderPath![i],
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: i ==
-                                            request.folderPath!.length - 1
-                                        ? Theme.of(context)
-                                            .textTheme
-                                            .bodyMedium!
-                                            .color
-                                        : Colors.grey,
-                                    fontWeight: i ==
-                                            request.folderPath!.length - 1
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
+                                  return;
+                                }
+                                Actions.invoke(
+                                  context,
+                                  OpenBreadcrumbOverviewIntent(
+                                    collectionId: collectionId,
+                                    folderPath:
+                                        request.folderPath ?? const [],
+                                    depth: i,
                                   ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
+                                );
+                              },
+                            ),
+                          AppBreadcrumbItem(
+                            label:
+                                request.name.isNotEmpty ? request.name : 'Request',
+                            isCurrent: true,
+                            onTap: () => ref
+                                .read(requestProvider.notifier)
+                                .loadRequest(request),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(width: 8),

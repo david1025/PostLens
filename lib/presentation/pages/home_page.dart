@@ -653,6 +653,52 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
     }
   }
 
+  void _openRequestInCurrentTab(HttpRequestModel req) {
+    _saveActiveRequestState();
+    if (_activeTabIndex < 0 || _activeTabIndex >= _requestTabs.length) {
+      _openRequestInTab(req);
+      return;
+    }
+
+    final currentId = _requestTabs[_activeTabIndex].id;
+    setState(() {
+      _requestTabs[_activeTabIndex] = req;
+      _tabKeys.clear();
+    });
+    ref.read(requestProvider.notifier).loadRequest(req);
+    _persistTabsToDatabase();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureTabVisible(_activeTabIndex);
+    });
+  }
+
+  void _openCollectionInCurrentTab(String id, bool isFolder, String name) {
+    _saveActiveRequestState();
+    if (_activeTabIndex < 0 || _activeTabIndex >= _requestTabs.length) {
+      _openCollectionInTab(id, isFolder, name);
+      return;
+    }
+
+    final currentId = _requestTabs[_activeTabIndex].id;
+    final url =
+        isFolder ? 'postlens://folder/$id' : 'postlens://collection/$id';
+    final newTab = HttpRequestModel(
+      id: currentId,
+      url: url,
+      method: 'COL',
+      name: name,
+    );
+    setState(() {
+      _requestTabs[_activeTabIndex] = newTab;
+      _tabKeys.clear();
+    });
+    ref.read(requestProvider.notifier).loadRequest(newTab);
+    _persistTabsToDatabase();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _ensureTabVisible(_activeTabIndex);
+    });
+  }
+
   void _addNewWorkspaceTab() {
     final newWorkspaceTab = HttpRequestModel(
       id: 'workspace_new_${DateTime.now().millisecondsSinceEpoch}',
@@ -802,18 +848,17 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
     }
 
     if (intent.depth < 0) {
-      _openCollectionInTab(collection.id, false, collection.name);
+      _openCollectionInCurrentTab(collection.id, false, collection.name);
       return;
     }
 
-    final folder =
-        _findFolderByPath(collection, intent.folderPath, intent.depth);
+    final folder = _findFolderByPath(collection, intent.folderPath, intent.depth);
     if (folder == null) {
-      _openCollectionInTab(collection.id, false, collection.name);
+      _openCollectionInCurrentTab(collection.id, false, collection.name);
       return;
     }
 
-    _openCollectionInTab(folder.id, true, folder.name);
+    _openCollectionInCurrentTab(folder.id, true, folder.name);
   }
 
   void _addProtocolTab({
@@ -1085,10 +1130,18 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
       );
     } else if (activeRequest.url.startsWith('postlens://collection/')) {
       final id = activeRequest.url.substring('postlens://collection/'.length);
-      return CollectionPane(collectionId: id, isFolder: false);
+      return _buildCollectionLikeView(
+        requestId: activeRequest.id,
+        collectionId: id,
+        isFolder: false,
+      );
     } else if (activeRequest.url.startsWith('postlens://folder/')) {
       final id = activeRequest.url.substring('postlens://folder/'.length);
-      return CollectionPane(collectionId: id, isFolder: true);
+      return _buildCollectionLikeView(
+        requestId: activeRequest.id,
+        collectionId: id,
+        isFolder: true,
+      );
     } else if (activeRequest.url.startsWith('postlens://environment/')) {
       if (activeRequest.url != 'postlens://environment/new') {
         final id =
@@ -1167,6 +1220,14 @@ class _HomePageState extends ConsumerState<HomePage> with WindowListener {
         ),
       ),
     );
+  }
+
+  Widget _buildCollectionLikeView({
+    required String requestId,
+    required String collectionId,
+    required bool isFolder,
+  }) {
+    return CollectionPane(collectionId: collectionId, isFolder: isFolder);
   }
 
   Widget _buildEnvironmentSelector() {

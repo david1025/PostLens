@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import '../../core/intents.dart';
 import '../../domain/models/collection_model.dart';
 import '../providers/collection_provider.dart';
 import '../providers/settings_provider.dart';
+import 'app_breadcrumb.dart';
 import 'doc_editor.dart';
 
 class CollectionPane extends ConsumerStatefulWidget {
@@ -43,6 +46,27 @@ class _CollectionPaneState extends ConsumerState<CollectionPane> {
       return Center(child: Text(t['not_found'] ?? 'Not found'));
     }
 
+    final folderPath =
+        folder != null ? _findFolderPath(collection!.children, folder.id) : const <String>[];
+    final breadcrumbItems = folder != null
+        ? [
+            for (int i = 0; i < folderPath.length; i++)
+              AppBreadcrumbItem(
+                label: folderPath[i],
+                isCurrent: i == folderPath.length - 1,
+                onTap: () {
+                  Actions.invoke(
+                    context,
+                    OpenBreadcrumbOverviewIntent(
+                      collectionId: collection!.id,
+                      folderPath: folderPath,
+                      depth: i,
+                    ),
+                  );
+                },
+              ),
+          ]
+        : const <AppBreadcrumbItem>[];
     final name = folder?.name ?? collection?.name ?? 'Unknown';
     final children = folder?.children ?? collection?.children ?? [];
     int folderCount = 0;
@@ -64,6 +88,25 @@ class _CollectionPaneState extends ConsumerState<CollectionPane> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (folder != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                    child: AppBreadcrumb(
+                      onRootTap: () {
+                        Actions.invoke(
+                          context,
+                          OpenBreadcrumbOverviewIntent(
+                            collectionId: collection!.id,
+                            folderPath: const [],
+                            depth: -1,
+                          ),
+                        );
+                      },
+                      items: breadcrumbItems,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                ],
                 Row(
                   children: [
                     Expanded(
@@ -142,5 +185,18 @@ class _CollectionPaneState extends ConsumerState<CollectionPane> {
       }
     }
     return null;
+  }
+
+  List<String> _findFolderPath(List<CollectionNode> nodes, String id) {
+    for (final node in nodes) {
+      if (node is CollectionFolder) {
+        if (node.id == id) return [node.name];
+        final childPath = _findFolderPath(node.children, id);
+        if (childPath.isNotEmpty) {
+          return [node.name, ...childPath];
+        }
+      }
+    }
+    return const [];
   }
 }
